@@ -43,11 +43,19 @@ where
     let sample_rate = config.sample_rate.0 as f32;
     let channels = config.channels as usize;
 
+    let freq_list: [f32; 4] = [220.0, 330.0, 440.0, 550.0];
+
     // Produce a sinusoid of maximum amplitude.
     let mut sample_clock = 0f32;
     let mut next_value = move || {
         sample_clock = (sample_clock + 1.0) % sample_rate;
-        (sample_clock * 880.0 * 2.0 * 3.141592 / sample_rate).sin()
+
+        let mut result = 0.0;
+        for freq in freq_list {
+            result += (sample_clock * freq * 2.0 * 3.141592 / sample_rate).sin();
+        }
+        result /= freq_list.len() as f32;
+        result
     };
 
     let err_fn = |err| console::error_1(&format!("an error occurred on stream: {}", err).into());
