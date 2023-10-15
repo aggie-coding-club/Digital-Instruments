@@ -3,3 +3,4 @@
 - Alan Zhou
 - Caleb Carpenter
 - Anders Bahrami
+- Tanuj Narnam
