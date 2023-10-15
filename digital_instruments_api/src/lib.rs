@@ -37,6 +37,24 @@ pub fn beep(freq_input: Option<f32>) -> Handle {
     })
 }
 
+#[wasm_bindgen]
+pub fn play_note(note_input: Option<f32>) -> Handle {
+    let host = cpal::default_host();
+    let device = host
+        .default_output_device()
+        .expect("failed to find a default output device");
+    let config = device.default_output_config().unwrap();
+
+    let freq = 440.0 * f32::powf(2.0, note_input.unwrap_or(0.0) / 12.0);
+
+    Handle(match config.sample_format() {
+        cpal::SampleFormat::F32 => run::<f32>(&device, &config.into(), freq),
+        cpal::SampleFormat::I16 => run::<i16>(&device, &config.into(), freq),
+        cpal::SampleFormat::U16 => run::<u16>(&device, &config.into(), freq),
+        _ => todo!(),
+    })
+}
+
 fn run<T>(device: &cpal::Device, config: &cpal::StreamConfig, freq: f32) -> Stream
 where
     T: SizedSample + FromSample<f32>,
