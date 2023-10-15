@@ -2,3 +2,6 @@
 - Nurivan Gomez
 - Alan Zhou
 - Julian Padovani
+- Caleb Carpenter
+- Anders Bahrami
+- Alex Zhang

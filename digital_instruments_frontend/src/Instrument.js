@@ -8,7 +8,8 @@ class Instrument extends Component {
     }
 
     startBeep = () => {
-        this.state.handles.push(instrument.beep());
+        this.state.handles.push(instrument.play_note(0)); // plays A4 (440Hz)
+        // integer step is one step
     }
     
     stopBeep = () => {
