@@ -21,7 +21,8 @@ use cpal::{Stream, Sample, FromSample, SizedSample};
 pub struct Handle(Stream);
 
 #[wasm_bindgen]
-pub fn beep() -> Handle {
+pub fn beep(freq_input: Option<f32>) -> Handle {
+    let freq = freq_input.unwrap_or(440.0);
     let host = cpal::default_host();
     let device = host
         .default_output_device()
@@ -29,14 +30,14 @@ pub fn beep() -> Handle {
     let config = device.default_output_config().unwrap();
 
     Handle(match config.sample_format() {
-        cpal::SampleFormat::F32 => run::<f32>(&device, &config.into()),
-        cpal::SampleFormat::I16 => run::<i16>(&device, &config.into()),
-        cpal::SampleFormat::U16 => run::<u16>(&device, &config.into()),
+        cpal::SampleFormat::F32 => run::<f32>(&device, &config.into(), freq),
+        cpal::SampleFormat::I16 => run::<i16>(&device, &config.into(), freq),
+        cpal::SampleFormat::U16 => run::<u16>(&device, &config.into(), freq),
         _ => todo!(),
     })
 }
 
-fn run<T>(device: &cpal::Device, config: &cpal::StreamConfig) -> Stream
+fn run<T>(device: &cpal::Device, config: &cpal::StreamConfig, freq: f32) -> Stream
 where
     T: SizedSample + FromSample<f32>,
 {
@@ -47,7 +48,7 @@ where
     let mut sample_clock = 0f32;
     let mut next_value = move || {
         sample_clock = (sample_clock + 1.0) % sample_rate;
-        (sample_clock * 440.0 * 2.0 * 3.141592 / sample_rate).sin()
+        (sample_clock * freq * 2.0 * 3.141592 / sample_rate).sin()
     };
 
     let err_fn = |err| console::error_1(&format!("an error occurred on stream: {}", err).into());
