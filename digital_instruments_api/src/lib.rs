@@ -38,14 +38,15 @@ pub fn beep(freq_input: Option<f32>) -> Handle {
 }
 
 #[wasm_bindgen]
-pub fn play_note(note_input: Option<f32>) -> Handle {
+pub fn play_note(note_input: Option<i32>) -> Handle {
+    // console::log_1(&format!("note_input: {:?}", note_input).into());
     let host = cpal::default_host();
     let device = host
         .default_output_device()
         .expect("failed to find a default output device");
     let config = device.default_output_config().unwrap();
 
-    let freq = 440.0 * f32::powf(2.0, note_input.unwrap_or(0.0) / 12.0);
+    let freq = 440.0 * f32::powf(2.0, note_input.unwrap_or(0) as f32 / 12.0);
 
     Handle(match config.sample_format() {
         cpal::SampleFormat::F32 => run::<f32>(&device, &config.into(), freq),
@@ -53,6 +54,53 @@ pub fn play_note(note_input: Option<f32>) -> Handle {
         cpal::SampleFormat::U16 => run::<u16>(&device, &config.into(), freq),
         _ => todo!(),
     })
+}
+
+#[wasm_bindgen]
+/// Plays a note in the specified octave.
+///
+/// # Arguments
+///
+/// * `octave` - An optional integer representing the octave to play the note in. Defaults to 4 if not provided.
+/// * `note` - An optional integer representing the note to play where 0 is A, 1 is A#, and so on. Defaults to 0 if not provided.
+///
+/// # Returns
+///
+/// A Handle object representing the note being played.
+pub fn play_octave_note(octave: Option<i32>, note: Option<i32>) -> Handle {
+    return play_note(Some(12 * (octave.unwrap_or(4) - 4) + note.unwrap_or(0)));
+}
+
+#[wasm_bindgen]
+/// Plays a note passed in as a string
+///
+/// # Arguments
+///
+/// * `note` - A string representing the note to play where "A4" is 0, "A#4" is 1, etc.
+/// and so on. Defaults to 0 if not provided.
+///
+/// # Returns
+///
+/// A Handle object representing the note being played.
+pub fn play_note_string(notestring: Option<String>) -> Handle{
+    let notestring = notestring.unwrap_or("A4".to_string());
+    let octave = notestring.chars().last().unwrap_or('4').to_digit(10).unwrap_or(4);
+    let note = match notestring.chars().nth(0).unwrap_or('A') {
+        'A' => 0,
+        'B' => 2,
+        'C' => 3,
+        'D' => 5,
+        'E' => 7,
+        'F' => 8,
+        'G' => 10,
+        _ => 0,
+    };
+    let modifier = match notestring.chars().nth(1).unwrap_or(' ') {
+        '#' => 1,
+        'b' => -1,
+        _ => 0,
+    };
+    return play_octave_note(Some(octave as i32), Some(note as i32 + modifier));
 }
 
 fn run<T>(device: &cpal::Device, config: &cpal::StreamConfig, freq: f32) -> Stream
@@ -68,7 +116,7 @@ where
         sample_clock = (sample_clock + 1.0) % sample_rate;
         (sample_clock * freq * 2.0 * 3.141592 / sample_rate).sin()
     };
-
+    
     let err_fn = |err| console::error_1(&format!("an error occurred on stream: {}", err).into());
 
     let stream = device
