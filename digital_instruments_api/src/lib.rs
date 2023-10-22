@@ -67,8 +67,11 @@ pub fn play_note(note_input: Option<i32>) -> Handle {
 /// # Returns
 ///
 /// A Handle object representing the note being played.
-pub fn play_octave_note(octave: Option<i32>, note: Option<i32>) -> Handle {
-    return play_note(Some(12 * (octave.unwrap_or(4) - 4) + note.unwrap_or(0)));
+pub fn play_octave_note(octave: i32, note: i32) -> Handle {
+    return play_note(
+        Some(
+            (octave * 12) + note
+        ));
 }
 
 #[wasm_bindgen]
@@ -80,11 +83,10 @@ pub fn play_octave_note(octave: Option<i32>, note: Option<i32>) -> Handle {
 /// and so on. Defaults to 0 if not provided.
 ///
 /// # Returns
-///
+/// 
 /// A Handle object representing the note being played.
-pub fn play_note_string(notestring: Option<String>) -> Handle{
-    let notestring = notestring.unwrap_or("A4".to_string());
-    let octave = notestring.chars().last().unwrap_or('4').to_digit(10).unwrap_or(4);
+pub fn play_note_string(notestring: String) -> Handle{
+    let octave = notestring.chars().last().unwrap_or('4').to_digit(10).unwrap_or(4) as i32;
     let note = match notestring.chars().nth(0).unwrap_or('A') {
         'A' => 0,
         'B' => 2,
@@ -100,7 +102,7 @@ pub fn play_note_string(notestring: Option<String>) -> Handle{
         'b' => -1,
         _ => 0,
     };
-    return play_octave_note(Some(octave as i32), Some(note as i32 + modifier));
+    return play_octave_note(octave, note + modifier);
 }
 
 fn run<T>(device: &cpal::Device, config: &cpal::StreamConfig, freq: f32) -> Stream
