@@ -39,7 +39,6 @@ pub fn beep(freq_input: Option<f32>) -> Handle {
 
 #[wasm_bindgen]
 pub fn play_note(note_input: Option<i32>) -> Handle {
-    // console::log_1(&format!("note_input: {:?}", note_input).into());
     let host = cpal::default_host();
     let device = host
         .default_output_device()
