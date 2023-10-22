@@ -70,7 +70,7 @@ pub fn play_note(note_input: Option<i32>) -> Handle {
 pub fn play_octave_note(octave: i32, note: i32) -> Handle {
     return play_note(
         Some(
-            (octave * 12) + note
+            ((octave - 4) * 12) + note
         ));
 }
 
