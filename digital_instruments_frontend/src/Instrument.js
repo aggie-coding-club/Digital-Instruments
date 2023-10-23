@@ -8,19 +8,19 @@ class Instrument extends Component {
         this.downBinds = new Map();
         this.upBinds = new Map();
 
-        this.createBind('KeyA', 0, false);
-        this.createBind('KeyS', 1, false);
-        this.createBind('KeyD', 2, false);
-        this.createBind('KeyF', 3, false);
-        this.createBind('KeyG', 4, false);
-        this.createBind('KeyH', 5, false);
-        this.createBind('KeyJ', 6, false);
-        this.createBind('KeyK', 7, false);
-        this.createBind('KeyL', 8, false);
-        this.createBind('KeyZ', 9, false);
-        this.createBind('KeyX', 10, false);
-        this.createBind('KeyC', 11, false);
-        this.createBind('KeyV', 12, false);
+        this.createBind('KeyA', 'A4', false);
+        this.createBind('KeyS', 'A#4', false);
+        this.createBind('KeyD', 'B4', false);
+        this.createBind('KeyF', 'C4', false);
+        this.createBind('KeyG', 'C#4', false);
+        this.createBind('KeyH', 'D4', false);
+        this.createBind('KeyJ', 'D#4', false);
+        this.createBind('KeyK', 'E4', false);
+        this.createBind('KeyL', 'F4', false);
+        this.createBind('KeyZ', 'F#4', false);
+        this.createBind('KeyX', 'G4', false);
+        this.createBind('KeyC', 'G#4', false);
+        this.createBind('KeyV', 'A5', false);
     }
 
     // A toggle bind remains active until the key is pressed a second time.
@@ -49,9 +49,17 @@ class Instrument extends Component {
         }
     }
 
-    startBeep = (note = 0) => {
-        return instrument.play_note(note); // plays A4 (440Hz)
-        // integer step is one step
+    startBeep = (note = "") => {
+        // volume: f32,
+        // attack_seconds: f32,
+        // attack_amplitude: f32,
+        // decay_seconds: f32,
+        // sustain_amplitude: f32,
+        // release_seconds: f32,
+        let instr = new instrument.Instrument(1, 2, 1, 0, 0, 0);
+        let overtone_relative_amplitudes = [1];
+        instr.set_overtone_relative_amplitudes(overtone_relative_amplitudes);
+        return instr.play_note_string(note);
     }
 
     _handleDocumentClick = (event) => {
