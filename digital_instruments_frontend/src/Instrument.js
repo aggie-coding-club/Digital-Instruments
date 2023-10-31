@@ -69,7 +69,7 @@ class Instrument extends Component {
         // decay_seconds: f32,
         // sustain_amplitude: f32,
         // release_seconds: f32,
-        let instr = new instrument.Instrument(1, 2, 1, 0, 0, 0);
+        let instr = new instrument.Instrument(1, 0.01, 1, 0.01, 0.1, 0);
         let overtone_relative_amplitudes = [0.5, 0.1, 0.3];
         instr.set_overtone_relative_amplitudes(overtone_relative_amplitudes);
         instr.play_note_string(note);

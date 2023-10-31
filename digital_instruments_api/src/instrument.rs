@@ -10,13 +10,13 @@ use cpal::{Stream, Sample, FromSample, SizedSample};
 
 #[wasm_bindgen]
 pub struct Instrument {
-    volume: Arc<Mutex<f32>>,
-    attack_seconds: f32,
-    attack_amplitude: f32,
-    decay_seconds: f32,
-    sustain_amplitude: f32,
-    release_seconds: f32,
-    overtone_relative_amplitudes: Arc<Mutex<Vec<f32>>>,
+    volume: Arc<Mutex<f64>>,
+    attack_seconds: f64,
+    attack_amplitude: f64,
+    decay_seconds: f64,
+    sustain_amplitude: f64,
+    release_seconds: f64,
+    overtone_relative_amplitudes: Arc<Mutex<Vec<f64>>>,
     stream: Option<Stream>,
 }
 
@@ -39,7 +39,7 @@ impl Instrument {
     ///
     /// Instrument object
     #[wasm_bindgen(constructor)]
-    pub fn new(volume: f32, attack_seconds: f32, attack_amplitude:f32, decay_seconds: f32, sustain_amplitude: f32, release_seconds: f32) -> Self {
+    pub fn new(volume: f64, attack_seconds: f64, attack_amplitude:f64, decay_seconds: f64, sustain_amplitude: f64, release_seconds: f64) -> Self {
         Self {
             volume: Arc::new(volume.into()),
             attack_seconds: attack_seconds,
@@ -47,12 +47,12 @@ impl Instrument {
             decay_seconds: decay_seconds,
             sustain_amplitude: sustain_amplitude,
             release_seconds: release_seconds,
-            overtone_relative_amplitudes: Arc::new(Mutex::new(Vec::<f32>::new())),
+            overtone_relative_amplitudes: Arc::new(Mutex::new(Vec::<f64>::new())),
             stream: None,
         }
     }
 
-    pub fn play_freq(&mut self, freq: f32) {
+    pub fn play_freq(&mut self, freq: f64) {
         let host = cpal::default_host();
         let device = host
             .default_output_device()
@@ -68,8 +68,8 @@ impl Instrument {
     }
 
     pub fn play_note(&mut self, note_input: Option<i32>) {
-        let note_input = note_input.unwrap_or(0) as f32;
-        let freq = 440.0 * f32::powf(2.0, note_input / 12.0);
+        let note_input = note_input.unwrap_or(0) as f64;
+        let freq = 440.0 * f64::powf(2.0, note_input / 12.0);
 
         self.play_freq(freq);
     }
@@ -118,17 +118,17 @@ impl Instrument {
     }
     
     
-    pub fn set_overtone_relative_amplitudes(&self, overtone_relative_amplitudes: Vec<f32>) {
+    pub fn set_overtone_relative_amplitudes(&self, overtone_relative_amplitudes: Vec<f64>) {
         let mut relative_amplitudes = self.overtone_relative_amplitudes.lock().unwrap();
         *relative_amplitudes = overtone_relative_amplitudes;
     }
 
-    pub fn set_volume(&self, volume: f32) {
+    pub fn set_volume(&self, volume: f64) {
         let mut vol = self.volume.lock().unwrap();
         *vol = volume;
     }
 
-    pub fn update_volume(&self, volume_change: f32) {
+    pub fn update_volume(&self, volume_change: f64) {
         let mut volume = self.volume.lock().unwrap();
         *volume += volume_change;
         if *volume > 1.0 {
@@ -138,32 +138,41 @@ impl Instrument {
         }
     }
 
-    pub fn get_volume(&self) -> f32 {
+    pub fn get_volume(&self) -> f64 {
         *self.volume.lock().unwrap()
     }
 
-    fn run<T>(&mut self, device: &cpal::Device, config: &cpal::StreamConfig, freq: f32)
+    fn run<T>(&mut self, device: &cpal::Device, config: &cpal::StreamConfig, freq: f64)
     where
-        T: SizedSample + FromSample<f32>,
+        T: SizedSample + FromSample<f64>,
     {
-        let sample_rate = config.sample_rate.0 as f32;
+        let sample_rate = config.sample_rate.0 as f64;
         let channels = config.channels as usize;
 
-        let amplitude_multiplier = 1.0;
-
         // Produce a sinusoid of maximum amplitude.
-        let mut sample_clock = 0f32;
-        let relative_amplitudes = Arc::clone(&self.overtone_relative_amplitudes);
-        let volume = Arc::clone(&self.volume);
-        // let relative_amplitudes = &self.overtone_relative_amplitudes;
+        let mut sample_clock = 0.0;
+        let relative_amplitudes = self.overtone_relative_amplitudes.clone();
+        let volume = self.volume.clone();
+        let attack_seconds = self.attack_seconds;
+        let attack_amplitude = self.attack_amplitude;
+        let decay_seconds = self.decay_seconds;
+        let sustain_amplitude = self.sustain_amplitude;
+        let release_seconds = self.release_seconds;
+
         let mut next_value = move || {
-            // sample_clock = (sample_clock + 1.0) % sample_rate;
             sample_clock += 1.0 / sample_rate;
+            let mut amplitude_multiplier = sustain_amplitude;
+
+            if sample_clock < attack_seconds {
+                amplitude_multiplier = attack_amplitude * sample_clock / attack_seconds;
+            } else if (sample_clock < attack_seconds + decay_seconds) && (sample_clock > attack_seconds) {
+                amplitude_multiplier = (sample_clock - attack_seconds) / decay_seconds * (sustain_amplitude - attack_amplitude) + attack_amplitude;
+            }
 
             let mut result = 0.0;
             let mut extra_amplitude = 0.0;
             for (i, amplitude) in relative_amplitudes.lock().unwrap().iter().enumerate()  {
-                result += (sample_clock * freq * (i + 1) as f32 * 2.0 * 3.141592).sin() * amplitude;
+                result += (sample_clock * freq * (i + 1) as f64 * 2.0 * 3.141592).sin() * amplitude;
                 extra_amplitude += amplitude;
             }
             result /= extra_amplitude;
@@ -187,9 +196,9 @@ impl Instrument {
     }
 }
 
-fn write_data<T>(output: &mut [T], channels: usize, next_sample: &mut dyn FnMut() -> f32)
+fn write_data<T>(output: &mut [T], channels: usize, next_sample: &mut dyn FnMut() -> f64)
 where
-    T: Sample + FromSample<f32>,
+    T: Sample + FromSample<f64>,
 {
     for frame in output.chunks_mut(channels) {
         let value = T::from_sample(next_sample());
