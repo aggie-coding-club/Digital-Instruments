@@ -4,48 +4,64 @@ const instrument = await import('digital_instruments');
 class Instrument extends Component {
     constructor(props) {
         super(props);
-        this.handles = new Map();
+        this.instruments = new Map();
         this.downBinds = new Map();
         this.upBinds = new Map();
 
-        this.createBind('KeyA', 'A4', false);
-        this.createBind('KeyS', 'A#4', false);
-        this.createBind('KeyD', 'B4', false);
-        this.createBind('KeyF', 'C4', false);
-        this.createBind('KeyG', 'C#4', false);
-        this.createBind('KeyH', 'D4', false);
-        this.createBind('KeyJ', 'D#4', false);
-        this.createBind('KeyK', 'E4', false);
-        this.createBind('KeyL', 'F4', false);
-        this.createBind('KeyZ', 'F#4', false);
-        this.createBind('KeyX', 'G4', false);
-        this.createBind('KeyC', 'G#4', false);
-        this.createBind('KeyV', 'A5', false);
+        this.createBind('KeyA', 'note', 'A4');
+        this.createBind('KeyS', 'note', 'A#4');
+        this.createBind('KeyD', 'note', 'B4');
+        this.createBind('KeyF', 'note', 'C4');
+        this.createBind('KeyG', 'note', 'C#4');
+        this.createBind('KeyH', 'note', 'D4');
+        this.createBind('KeyJ', 'note', 'D#4');
+        this.createBind('KeyK', 'note', 'E4');
+        this.createBind('KeyL', 'note', 'F4');
+        this.createBind('KeyZ', 'note', 'F#4');
+        this.createBind('KeyX', 'note', 'G4');
+        this.createBind('KeyC', 'note', 'G#4');
+        this.createBind('KeyV', 'note', 'A5');
+        this.createBind('MouseMoveY', 'volume');
     }
 
     // A toggle bind remains active until the key is pressed a second time.
     // Default behavior is to remain active while the key is held down.
     // action is the key or thing done to activate the bind.
-    createBind(action, note, toggle = false) {
-        if(toggle) {
-            this.downBinds.set(action, () => this.toggleBeep(action, note));
-        } else {
-            this.downBinds.set(action, () => {
-                if(!this.handles.has(action)) {
-                    this.toggleBeep(action, note);
-                }
-            });
-
-            this.upBinds.set(action, () => this.toggleBeep(action, note));
+    createBind(action, type, value = null) {
+        if(action.startsWith('Key')) {
+            if(type === 'toggleNote') {
+                this.downBinds.set(action, () => this.toggleBeep(action, value));
+            } else if(type === 'note') {
+                this.downBinds.set(action, () => {
+                    if(!this.instruments.has(action) || this.instruments.get(action).is_releasing()) {
+                        this.toggleBeep(action, value);
+                    }
+                });
+                this.upBinds.set(action, () => this.toggleBeep(action, value));
+            } else {
+                alert('Type \'' + type + '\' is not supported.')
+            }
+        } else if(action === 'MouseMoveY') {
+            if(type === 'volume') {
+                this.downBinds.set(action, (event) => {
+                    for(let i of this.instruments.values()) {
+                        i.update_volume(event.movementY / 1000);
+                    }
+                });
+            }
         }
     }
 
     toggleBeep(action, note) {
-        if(this.handles.has(action)) {
-            this.handles.get(action).free();
-            this.handles.delete(action);
+        if(this.instruments.has(action)) {
+            let instrument = this.instruments.get(action);
+            if(instrument.is_releasing()) {
+                instrument.play_note_string(note);
+            } else {
+                this.instruments.get(action).release();
+            }            
         } else {
-            this.handles.set(action, this.startBeep(note));
+            this.instruments.set(action, this.startBeep(note));
         }
     }
 
@@ -56,10 +72,11 @@ class Instrument extends Component {
         // decay_seconds: f32,
         // sustain_amplitude: f32,
         // release_seconds: f32,
-        let instr = new instrument.Instrument(1, 2, 1, 0, 0, 0);
-        let overtone_relative_amplitudes = [1];
+        let instr = new instrument.Instrument(1, 0.01, 1, 0.02, 0.3, 0.2);
+        let overtone_relative_amplitudes = [0.5, 0.1, 0.3];
         instr.set_overtone_relative_amplitudes(overtone_relative_amplitudes);
-        return instr.play_note_string(note);
+        instr.play_note_string(note);
+        return instr;
     }
 
     _handleDocumentClick = (event) => {
@@ -90,16 +107,27 @@ class Instrument extends Component {
         }
     }
 
+    _handleMouseMove = (event) => {
+        if(this.downBinds.has('MouseMoveX')) {
+            this.downBinds.get('MouseMoveX')(event);
+        }
+        if(this.downBinds.has('MouseMoveY')) {
+            this.downBinds.get('MouseMoveY')(event);
+        }
+    }
+
     componentDidMount(){
         document.addEventListener("click", this._handleDocumentClick, false);
         document.addEventListener("keydown", this._handleKeyDown);
         document.addEventListener("keyup", this._handleKeyUp);
+        document.addEventListener("mousemove", this._handleMouseMove);
     }
     
     componentWillUnmount() {
         document.removeEventListener("click", this._handleDocumentClick, false);
         document.removeEventListener("keydown", this._handleKeyDown);
         document.removeEventListener("keyup", this._handleKeyUp);
+        document.removeEventListener("mousemove", this._handleMouseMove);
     }
 
     render() {
