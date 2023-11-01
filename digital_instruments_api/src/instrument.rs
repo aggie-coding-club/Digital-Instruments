@@ -1,6 +1,8 @@
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use atomic_float::AtomicF64;
 use cpal::traits::{HostTrait, DeviceTrait, StreamTrait};
 use wasm_bindgen::prelude::*;
 use web_sys::console;
@@ -10,12 +12,13 @@ use cpal::{Stream, Sample, FromSample, SizedSample};
 
 #[wasm_bindgen]
 pub struct Instrument {
-    volume: Arc<Mutex<f64>>,
+    volume: Arc<AtomicF64>,
     attack_seconds: f64,
     attack_amplitude: f64,
     decay_seconds: f64,
     sustain_amplitude: f64,
     release_seconds: f64,
+    releasing: Arc<AtomicBool>,
     overtone_relative_amplitudes: Arc<Mutex<Vec<f64>>>,
     stream: Option<Stream>,
 }
@@ -47,9 +50,14 @@ impl Instrument {
             decay_seconds: decay_seconds,
             sustain_amplitude: sustain_amplitude,
             release_seconds: release_seconds,
+            releasing: Arc::new(AtomicBool::new(false)),
             overtone_relative_amplitudes: Arc::new(Mutex::new(Vec::<f64>::new())),
             stream: None,
         }
+    }
+
+    pub fn is_releasing(&self) -> bool {
+        self.releasing.load(Ordering::Relaxed)
     }
 
     pub fn play_freq(&mut self, freq: f64) {
@@ -92,7 +100,12 @@ impl Instrument {
     }
 
     pub fn free(&mut self) {
+        let _ = self.stream.as_ref().unwrap().pause();
         self.stream = None;
+    }
+
+    pub fn release(&self) {
+        self.releasing.store(true, Ordering::Relaxed);
     }
 
     pub fn play_note_string(&mut self, notestring: String) {
@@ -124,28 +137,30 @@ impl Instrument {
     }
 
     pub fn set_volume(&self, volume: f64) {
-        let mut vol = self.volume.lock().unwrap();
-        *vol = volume;
+        self.volume.store(volume, Ordering::Relaxed);
     }
 
     pub fn update_volume(&self, volume_change: f64) {
-        let mut volume = self.volume.lock().unwrap();
-        *volume += volume_change;
-        if *volume > 1.0 {
-            *volume = 1.0;
-        } else if *volume < 0.0 {
-            *volume = 0.0;
+        let mut volume = self.volume.load(Ordering::Relaxed);
+        volume += volume_change;
+        if volume > 1.0 {
+            volume = 1.0;
+        } else if volume < 0.0 {
+            volume = 0.0;
         }
+
+        self.volume.store(volume, Ordering::Relaxed);
     }
 
     pub fn get_volume(&self) -> f64 {
-        *self.volume.lock().unwrap()
+        self.volume.load(Ordering::Relaxed)
     }
 
     fn run<T>(&mut self, device: &cpal::Device, config: &cpal::StreamConfig, freq: f64)
     where
         T: SizedSample + FromSample<f64>,
     {
+        self.releasing.store(false, Ordering::Relaxed);
         let sample_rate = config.sample_rate.0 as f64;
         let channels = config.channels as usize;
 
@@ -158,15 +173,26 @@ impl Instrument {
         let decay_seconds = self.decay_seconds;
         let sustain_amplitude = self.sustain_amplitude;
         let release_seconds = self.release_seconds;
+        let mut release_start = 0.0;
+        let is_releasing = self.releasing.clone();
 
         let mut next_value = move || {
             sample_clock += 1.0 / sample_rate;
+
+            if release_start == 0.0 && is_releasing.load(Ordering::Relaxed) {
+                release_start = sample_clock;
+            }
+
             let mut amplitude_multiplier = sustain_amplitude;
 
             if sample_clock < attack_seconds {
                 amplitude_multiplier = attack_amplitude * sample_clock / attack_seconds;
             } else if (sample_clock < attack_seconds + decay_seconds) && (sample_clock > attack_seconds) {
                 amplitude_multiplier = (sample_clock - attack_seconds) / decay_seconds * (sustain_amplitude - attack_amplitude) + attack_amplitude;
+            } else if release_start > 0.0 && (sample_clock - release_start) < release_seconds {
+                amplitude_multiplier = (1.0 - (sample_clock - release_start) / release_seconds) * sustain_amplitude;
+            } else if release_start > 0.0 {
+                return 0.0;
             }
 
             let mut result = 0.0;
@@ -177,7 +203,7 @@ impl Instrument {
             }
             result /= extra_amplitude;
             result *= amplitude_multiplier;
-            result *= *volume.lock().unwrap();
+            result *= volume.load(Ordering::Relaxed);
             result
         };
         
