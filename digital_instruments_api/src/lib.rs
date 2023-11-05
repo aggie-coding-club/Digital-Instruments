@@ -43,7 +43,10 @@ where
     let sample_rate = config.sample_rate.0 as f32;
     let channels = config.channels as usize;
 
-    let freq_list: [f32; 4] = [220.0, 330.0, 440.0, 550.0];
+    let freq_list = [
+        (200.0, 1.0)
+    ];
+    let amplitude_multiplier = 1.0;
 
     // Produce a sinusoid of maximum amplitude.
     let mut sample_clock = 0f32;
@@ -51,13 +54,16 @@ where
         sample_clock = (sample_clock + 1.0) % sample_rate;
 
         let mut result = 0.0;
+        let mut extra_amplitude = 0.0;
         for freq in freq_list {
-            result += (sample_clock * freq * 2.0 * 3.141592 / sample_rate).sin();
+            result += (sample_clock * freq.0 * 2.0 * 3.141592 / sample_rate).sin() * freq.1;
+            extra_amplitude += freq.1;
         }
-        result /= freq_list.len() as f32;
+        result /= extra_amplitude;
+        result *= amplitude_multiplier;
         result
     };
-
+    
     let err_fn = |err| console::error_1(&format!("an error occurred on stream: {}", err).into());
 
     let stream = device

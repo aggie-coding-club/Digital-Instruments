@@ -8,7 +8,8 @@ class Instrument extends Component {
     }
 
     startBeep = () => {
-        this.state.handles.push(instrument.beep());
+        const freq = 440;
+        this.state.handles.push(instrument.beep(freq));
     }
     
     stopBeep = () => {
