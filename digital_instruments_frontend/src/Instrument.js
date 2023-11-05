@@ -8,19 +8,19 @@ class Instrument extends Component {
         this.downBinds = new Map();
         this.upBinds = new Map();
 
-        this.createBind('KeyA', 'note', 'A4');
-        this.createBind('KeyS', 'note', 'A#4');
-        this.createBind('KeyD', 'note', 'B4');
-        this.createBind('KeyF', 'note', 'C4');
-        this.createBind('KeyG', 'note', 'C#4');
-        this.createBind('KeyH', 'note', 'D4');
-        this.createBind('KeyJ', 'note', 'D#4');
-        this.createBind('KeyK', 'note', 'E4');
-        this.createBind('KeyL', 'note', 'F4');
-        this.createBind('KeyZ', 'note', 'F#4');
-        this.createBind('KeyX', 'note', 'G4');
-        this.createBind('KeyC', 'note', 'G#4');
-        this.createBind('KeyV', 'note', 'A5');
+        this.createBind('KeyA', 'note', 'A3');
+        this.createBind('KeyS', 'note', 'A#3');
+        this.createBind('KeyD', 'note', 'B3');
+        this.createBind('KeyF', 'note', 'C3');
+        this.createBind('KeyG', 'note', 'C#3');
+        this.createBind('KeyH', 'note', 'D3');
+        this.createBind('KeyJ', 'note', 'D#3');
+        this.createBind('KeyK', 'note', 'E3');
+        this.createBind('KeyL', 'note', 'F3');
+        this.createBind('KeyZ', 'note', 'F#3');
+        this.createBind('KeyX', 'note', 'G3');
+        this.createBind('KeyC', 'note', 'G#3');
+        this.createBind('KeyV', 'note', 'A4');
         this.createBind('MouseMoveY', 'volume');
     }
 
@@ -73,7 +73,7 @@ class Instrument extends Component {
         // sustain_amplitude: f32,
         // release_seconds: f32,
         let instr = new instrument.Instrument(1, 0.01, 1, 0.02, 0.3, 0.2);
-        let overtone_relative_amplitudes = [0.5, 0.1, 0.3];
+        let overtone_relative_amplitudes = [16, 6, 6, 1, 6, 2, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
         instr.set_overtone_relative_amplitudes(overtone_relative_amplitudes);
         instr.play_note_string(note);
         return instr;
