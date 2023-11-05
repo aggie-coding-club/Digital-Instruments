@@ -33,11 +33,10 @@ class Instrument extends Component {
                 this.downBinds.set(action, () => this.toggleBeep(action, value));
             } else if(type === 'note') {
                 this.downBinds.set(action, () => {
-                    if(!this.instruments.has(action)) {
+                    if(!this.instruments.has(action) || this.instruments.get(action).is_releasing()) {
                         this.toggleBeep(action, value);
                     }
                 });
-    
                 this.upBinds.set(action, () => this.toggleBeep(action, value));
             } else {
                 alert('Type \'' + type + '\' is not supported.')
@@ -55,8 +54,12 @@ class Instrument extends Component {
 
     toggleBeep(action, note) {
         if(this.instruments.has(action)) {
-            this.instruments.get(action).free();
-            this.instruments.delete(action);
+            let instrument = this.instruments.get(action);
+            if(instrument.is_releasing()) {
+                instrument.play_note_string(note);
+            } else {
+                this.instruments.get(action).release();
+            }            
         } else {
             this.instruments.set(action, this.startBeep(note));
         }
@@ -69,7 +72,7 @@ class Instrument extends Component {
         // decay_seconds: f32,
         // sustain_amplitude: f32,
         // release_seconds: f32,
-        let instr = new instrument.Instrument(1, 2, 1, 0, 0, 0);
+        let instr = new instrument.Instrument(1, 0.01, 1, 0.02, 0.3, 0.2);
         let overtone_relative_amplitudes = [0.5, 0.1, 0.3];
         instr.set_overtone_relative_amplitudes(overtone_relative_amplitudes);
         instr.play_note_string(note);
