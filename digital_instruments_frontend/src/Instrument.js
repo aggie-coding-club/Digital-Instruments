@@ -1,4 +1,14 @@
 import React, {Component} from 'react';
+import {
+    Chart,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Tooltip,
+    Legend,
+} from "chart.js";
+
+Chart.register( LinearScale, PointElement, LineElement, Tooltip, Legend );  
 const instrument = await import('digital_instruments');
 
 class Instrument extends Component {
@@ -8,19 +18,50 @@ class Instrument extends Component {
         this.downBinds = new Map();
         this.upBinds = new Map();
 
-        this.createBind('KeyA', 'note', 'A3');
-        this.createBind('KeyS', 'note', 'A#3');
-        this.createBind('KeyD', 'note', 'B3');
-        this.createBind('KeyF', 'note', 'C3');
-        this.createBind('KeyG', 'note', 'C#3');
-        this.createBind('KeyH', 'note', 'D3');
-        this.createBind('KeyJ', 'note', 'D#3');
-        this.createBind('KeyK', 'note', 'E3');
-        this.createBind('KeyL', 'note', 'F3');
-        this.createBind('KeyZ', 'note', 'F#3');
-        this.createBind('KeyX', 'note', 'G3');
-        this.createBind('KeyC', 'note', 'G#3');
-        this.createBind('KeyV', 'note', 'A4');
+        const keyBinds = {
+            'KeyQ': 'C3',
+            'KeyW': 'C#3',
+            'KeyE': 'D3',
+            'KeyR': 'Eb3',
+            'KeyT': 'E3',
+            'KeyY': 'F3',
+            'KeyU': 'F#3',
+            'KeyI': 'G3',
+            'KeyO': 'G#3',
+            'KeyP': 'A3',
+            'BracketLeft': 'Bb3',
+            'BracketRight': 'B3',
+
+            'KeyA': 'C4',
+            'KeyS': 'C#4',
+            'KeyD': 'D4',
+            'KeyF': 'Eb4',
+            'KeyG': 'E4',
+            'KeyH': 'F4',
+            'KeyJ': 'F#4',
+            'KeyK': 'G4',
+            'KeyL': 'G#4',
+            'Semicolon': 'A4',
+            'Quote': 'Bb4',
+            'ShiftRight': 'B4',
+
+            'KeyZ': 'C5',
+            'KeyX': 'C#5',
+            'KeyC': 'D5',
+            'KeyV': 'Eb5',
+            'KeyB': 'E5',
+            'KeyN': 'F5',
+            'KeyM': 'F#5',
+            'Comma': 'G5',
+            'Period': 'G#5',
+            'Slash': 'A5',
+        }
+        this.keyBinds = keyBinds;
+
+        for (const [key, value] of Object.entries(keyBinds)) {
+            this.createBind(key, 'note', value);
+        }
+
         this.createBind('MouseMoveY', 'volume');
     }
 
@@ -28,7 +69,7 @@ class Instrument extends Component {
     // Default behavior is to remain active while the key is held down.
     // action is the key or thing done to activate the bind.
     createBind(action, type, value = null) {
-        if(action.startsWith('Key')) {
+        if(this.keyBinds.hasOwnProperty(action)) {
             if(type === 'toggleNote') {
                 this.downBinds.set(action, () => this.toggleBeep(action, value));
             } else if(type === 'note') {
@@ -72,8 +113,8 @@ class Instrument extends Component {
         // decay_seconds: f32,
         // sustain_amplitude: f32,
         // release_seconds: f32,
-        let instr = new instrument.Instrument(1, 0.01, 1, 0.02, 0.3, 0.2);
-        let overtone_relative_amplitudes = [16, 6, 6, 1, 6, 2, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+        let instr = new instrument.Instrument(1, 0.01, 1, 0.015, 0.4, 0.25);
+        let overtone_relative_amplitudes = [1.5, 0.3, 0.2, 0.1, 0.02];
         instr.set_overtone_relative_amplitudes(overtone_relative_amplitudes);
         instr.play_note_string(note);
         return instr;
