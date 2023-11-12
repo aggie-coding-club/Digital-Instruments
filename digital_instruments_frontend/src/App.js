@@ -3,14 +3,14 @@ import {NextUIProvider} from "@nextui-org/react";
 import './App.css';
 import Instrument from './Instrument';
 import InstrumentCard from './InstrumentCard';
-import Graph from './Graph';
+import VolumeGraph from './VolumeGraph';
 
 class App extends Component {
   render() {
 
     return (
       <NextUIProvider>
-        <Graph/>
+        <VolumeGraph/>
         <Instrument/>
         <InstrumentCard name="Instrument Name" description="This is the description"/>
       </NextUIProvider>
