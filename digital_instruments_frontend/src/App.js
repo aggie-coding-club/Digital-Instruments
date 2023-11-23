@@ -3,6 +3,7 @@ import {NextUIProvider} from "@nextui-org/react";
 import './App.css';
 import Instrument from './Instrument';
 import InstrumentCard from './InstrumentCard';
+import InstrumentMaker from './InstrumentMaker';
 
 
 class App extends Component {
@@ -11,6 +12,7 @@ class App extends Component {
       <NextUIProvider>
         <Instrument/>
         <InstrumentCard name="Instrument Name" description="This is the description"/>
+        <InstrumentMaker></InstrumentMaker>
       </NextUIProvider>
     );
   }
