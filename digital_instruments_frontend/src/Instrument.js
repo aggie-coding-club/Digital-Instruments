@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import {getInstrumentLibrary} from './InstrumentLibrary';
 const instrument = await import('digital_instruments');
 
 class Instrument extends Component {
@@ -7,6 +8,7 @@ class Instrument extends Component {
         this.instruments = new Map();
         this.downBinds = new Map();
         this.upBinds = new Map();
+        this.lastInstrument = null;
 
         this.createBind('KeyA', 'note', 'A3');
         this.createBind('KeyS', 'note', 'A#3');
@@ -52,7 +54,20 @@ class Instrument extends Component {
         }
     }
 
+    updateInstruments() {
+        let current = getInstrumentLibrary().currentInstrument;
+        if(current !== this.lastInstrument) {
+            this.instruments.forEach((value, key) => {
+                let instrument = value;
+                instrument.release();
+            });
+            this.instruments.clear();
+        }
+        this.lastInstrument = current;
+    }
+
     toggleBeep(action, note) {
+        this.updateInstruments();
         if(this.instruments.has(action)) {
             let instrument = this.instruments.get(action);
             if(instrument.is_releasing()) {
@@ -66,6 +81,7 @@ class Instrument extends Component {
     }
 
     startBeep = (note = "") => {
+        this.updateInstruments();
         // volume: f32,
         // attack_seconds: f32,
         // attack_amplitude: f32,
@@ -73,14 +89,15 @@ class Instrument extends Component {
         // sustain_amplitude: f32,
         // release_seconds: f32,
         let instr = new instrument.Instrument(1, 0.01, 1, 0.02, 0.3, 0.2);
-        let overtone_relative_amplitudes = [16, 6, 6, 1, 6, 2, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+        let overtone_relative_amplitudes = getInstrumentLibrary().currentInstrument.instrumentSound.overtoneRelativeAmplitudes;
         instr.set_overtone_relative_amplitudes(overtone_relative_amplitudes);
-        instr.play_note_string(note);
+        if(getInstrumentLibrary().currentInstrument.title !== "None"){
+            instr.play_note_string(note);
+        }
         return instr;
     }
 
     _handleDocumentClick = (event) => {
-        console.log(event);
     }
 
     _handleKeyDown = (event) => {
