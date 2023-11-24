@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import InstrumentLibrary from './InstrumentLibrary';
 const instrument = await import('digital_instruments');
 
 class Instrument extends Component {
@@ -72,11 +73,25 @@ class Instrument extends Component {
         // decay_seconds: f32,
         // sustain_amplitude: f32,
         // release_seconds: f32,
+
+        // this.changeInstrument();
+
+        console.log(InstrumentLibrary.currentInstrument.instrumentSound.overtoneRelativeAmplitudes);
         let instr = new instrument.Instrument(1, 0.01, 1, 0.02, 0.3, 0.2);
-        let overtone_relative_amplitudes = [16, 6, 6, 1, 6, 2, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+        let overtone_relative_amplitudes = InstrumentLibrary.currentInstrument.instrumentSound.overtoneRelativeAmplitudes;
         instr.set_overtone_relative_amplitudes(overtone_relative_amplitudes);
-        instr.play_note_string(note);
+        if(InstrumentLibrary.currentInstrument.title !== "None"){
+            instr.play_note_string(note);
+        }
         return instr;
+    }
+
+    changeInstrument = () => {
+        this.instruments.forEach((value, key) => {
+            let instrument = value;
+            instrument.release();
+        })
+        this.instruments.clear();
     }
 
     _handleDocumentClick = (event) => {
