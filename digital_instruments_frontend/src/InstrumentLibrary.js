@@ -1,4 +1,4 @@
-const InstrumentLibrary = {
+let InstrumentLibrary = {
     currentInstrument: {
         title: "None",
         img: "https://th.bing.com/th/id/OIP.Cy7-Xf2U_h5Eqrdodq-3iAHaHa?pid=ImgDet&rs=1",
@@ -49,5 +49,57 @@ const InstrumentLibrary = {
     },
 };
 
+let updateCallbacks = [];
 
-export default InstrumentLibrary;
+let first = true;
+
+function runUpdateCallbacks() {
+  updateCallbacks.forEach(callback => callback());
+}
+
+function loadFromStorage() {
+  let stored = localStorage.getItem('InstrumentLibrary');
+  if(stored) {
+    InstrumentLibrary = JSON.parse(stored);
+    runUpdateCallbacks();
+  }
+}
+
+function addInstrument(instrument) {
+  InstrumentLibrary.list[instrument.title] = instrument;
+  localStorage.setItem('InstrumentLibrary', JSON.stringify(InstrumentLibrary));
+  runUpdateCallbacks();
+}
+
+function removeInstrument(name) {
+  delete InstrumentLibrary.list[name];
+  localStorage.setItem('InstrumentLibrary', JSON.stringify(InstrumentLibrary));
+  runUpdateCallbacks();
+}
+
+function addUpdateCallback(c) {
+  updateCallbacks.push(c);
+}
+
+function setCurrentInstrument(i) {
+  InstrumentLibrary.currentInstrument = i;
+  runUpdateCallbacks();
+}
+
+function getInstrumentLibrary() {
+  if(first) {
+    loadFromStorage();
+    first = false;
+  }
+
+  return InstrumentLibrary;
+}
+
+
+export {
+  getInstrumentLibrary,
+  addInstrument,
+  addUpdateCallback,
+  setCurrentInstrument,
+  removeInstrument,
+}

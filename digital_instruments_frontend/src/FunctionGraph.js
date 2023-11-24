@@ -45,7 +45,7 @@ class FunctionGraph extends React.Component {
 
     render() {
         return (
-            <canvas width={500} height={500} ref={this.canvas} style={{border: '2px solid black'}}/>
+            <canvas width={500} height={500} style={{'width': '100%'}} ref={this.canvas}/>
             );
     }
 } export default FunctionGraph;

@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import InstrumentLibrary from './InstrumentLibrary';
+import {getInstrumentLibrary} from './InstrumentLibrary';
 const instrument = await import('digital_instruments');
 
 class Instrument extends Component {
@@ -8,6 +8,7 @@ class Instrument extends Component {
         this.instruments = new Map();
         this.downBinds = new Map();
         this.upBinds = new Map();
+        this.lastInstrument = null;
 
         this.createBind('KeyA', 'note', 'A3');
         this.createBind('KeyS', 'note', 'A#3');
@@ -53,7 +54,20 @@ class Instrument extends Component {
         }
     }
 
+    updateInstruments() {
+        let current = getInstrumentLibrary().currentInstrument;
+        if(current !== this.lastInstrument) {
+            this.instruments.forEach((value, key) => {
+                let instrument = value;
+                instrument.release();
+            });
+            this.instruments.clear();
+        }
+        this.lastInstrument = current;
+    }
+
     toggleBeep(action, note) {
+        this.updateInstruments();
         if(this.instruments.has(action)) {
             let instrument = this.instruments.get(action);
             if(instrument.is_releasing()) {
@@ -67,35 +81,23 @@ class Instrument extends Component {
     }
 
     startBeep = (note = "") => {
+        this.updateInstruments();
         // volume: f32,
         // attack_seconds: f32,
         // attack_amplitude: f32,
         // decay_seconds: f32,
         // sustain_amplitude: f32,
         // release_seconds: f32,
-
-        // this.changeInstrument();
-
-        console.log(InstrumentLibrary.currentInstrument.instrumentSound.overtoneRelativeAmplitudes);
         let instr = new instrument.Instrument(1, 0.01, 1, 0.02, 0.3, 0.2);
-        let overtone_relative_amplitudes = InstrumentLibrary.currentInstrument.instrumentSound.overtoneRelativeAmplitudes;
+        let overtone_relative_amplitudes = getInstrumentLibrary().currentInstrument.instrumentSound.overtoneRelativeAmplitudes;
         instr.set_overtone_relative_amplitudes(overtone_relative_amplitudes);
-        if(InstrumentLibrary.currentInstrument.title !== "None"){
+        if(getInstrumentLibrary().currentInstrument.title !== "None"){
             instr.play_note_string(note);
         }
         return instr;
     }
 
-    changeInstrument = () => {
-        this.instruments.forEach((value, key) => {
-            let instrument = value;
-            instrument.release();
-        })
-        this.instruments.clear();
-    }
-
     _handleDocumentClick = (event) => {
-        console.log(event);
     }
 
     _handleKeyDown = (event) => {
