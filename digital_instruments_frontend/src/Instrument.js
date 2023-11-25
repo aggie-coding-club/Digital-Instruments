@@ -109,9 +109,11 @@ class Instrument extends Component {
     }
 
     _handleDocumentClick = (event) => {
+        if(this.props.enabled === false) return;
     }
 
     _handleKeyDown = (event) => {
+        if(this.props.enabled === false) return;
         // If the event is not case sensitive, it should use the code
         if(this.downBinds.has(event.code)) {
             this.downBinds.get(event.code)();
@@ -124,6 +126,7 @@ class Instrument extends Component {
     }
 
     _handleKeyUp = (event) => {
+        if(this.props.enabled === false) return;
         // If the event is not case sensitive, it should use the code
         if(this.upBinds.has(event.code)) {
             this.upBinds.get(event.code)();
@@ -136,6 +139,7 @@ class Instrument extends Component {
     }
 
     _handleMouseMove = (event) => {
+        if(this.props.enabled === false) return;
         if(this.downBinds.has('MouseMoveX')) {
             this.downBinds.get('MouseMoveX')(event);
         }
@@ -161,7 +165,6 @@ class Instrument extends Component {
     render() {
         return (
             <div>
-                <p>Press the A-L and Z-V keys to play notes.</p>
             </div>
         );
     }
