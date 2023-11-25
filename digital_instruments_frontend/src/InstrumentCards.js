@@ -22,7 +22,6 @@ class InstrumentCards extends React.Component {
         addUpdateCallback(this.updateCallback);
     }
     render() {
-        console.log(this.state)
         return (
             <div className="gap-2 grid grid-cols-2 sm:grid-cols-4">
             {Object.values(list).map((item, index) => (
@@ -60,7 +59,6 @@ class InstrumentCards extends React.Component {
                 </CardBody>
             </Card>
             <div className={'fixed top-0 mx-auto inset-x-0 h-full z-10 max-w-5xl ' + this.state.makerVisibility}><InstrumentMaker></InstrumentMaker></div>
-            
             </div>
         )
     }

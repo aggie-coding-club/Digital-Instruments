@@ -24,6 +24,7 @@ class Instrument extends Component {
         this.createBind('KeyC', 'note', 'G#3');
         this.createBind('KeyV', 'note', 'A4');
         this.createBind('MouseMoveY', 'volume');
+        this.createBind('MouseMoveX', 'frequency');
     }
 
     // A toggle bind remains active until the key is pressed a second time.
@@ -43,11 +44,21 @@ class Instrument extends Component {
             } else {
                 alert('Type \'' + type + '\' is not supported.')
             }
-        } else if(action === 'MouseMoveY') {
+        } else if(action === 'MouseMoveY' || action === 'MouseMoveX') {
+            let movementType = 'movementX';
+            if(action === 'MouseMoveY') {
+                movementType = 'movementY'
+            }
             if(type === 'volume') {
                 this.downBinds.set(action, (event) => {
                     for(let i of this.instruments.values()) {
-                        i.update_volume(event.movementY / 1000);
+                        i.update_volume(event[movementType] / 1000);
+                    }
+                });
+            } else if(type === 'frequency') {
+                this.downBinds.set(action, (event) => {
+                    for(let i of this.instruments.values()) {
+                        i.update_frequency_bend(-1, 1, event[movementType] / 1000);
                     }
                 });
             }
