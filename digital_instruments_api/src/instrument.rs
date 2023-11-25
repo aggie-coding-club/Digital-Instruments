@@ -58,6 +58,10 @@ impl Instrument {
         }
     }
 
+    pub fn has_started(&self) -> bool {
+        self.stream.is_some()
+    }
+
     pub fn is_releasing(&self) -> bool {
         self.releasing.load(Ordering::Relaxed)
     }

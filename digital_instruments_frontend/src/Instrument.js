@@ -32,11 +32,13 @@ class Instrument extends Component {
     // action is the key or thing done to activate the bind.
     createBind(action, type, value = null) {
         if(action.startsWith('Key')) {
+            this.instruments.set(action, this.buildCurrentInstrument());
             if(type === 'toggleNote') {
                 this.downBinds.set(action, () => this.toggleBeep(action, value));
             } else if(type === 'note') {
                 this.downBinds.set(action, () => {
-                    if(!this.instruments.has(action) || this.instruments.get(action).is_releasing()) {
+
+                    if(this.instruments.get(action).is_releasing() || !this.instruments.get(action).has_started()) {
                         this.toggleBeep(action, value);
                     }
                 });
@@ -68,27 +70,29 @@ class Instrument extends Component {
     updateInstruments() {
         let current = getInstrumentLibrary().currentInstrument;
         if(current !== this.lastInstrument) {
-            this.instruments.forEach((value, key) => {
-                let instrument = value;
+            this.instruments.forEach((instrument, key) => {
                 instrument.release();
+                this.instruments.set(key, this.buildCurrentInstrument());
             });
-            this.instruments.clear();
         }
         this.lastInstrument = current;
     }
 
     toggleBeep(action, note) {
         this.updateInstruments();
-        if(this.instruments.has(action)) {
-            let instrument = this.instruments.get(action);
-            if(instrument.is_releasing()) {
-                instrument.play_note_string(note);
-            } else {
-                this.instruments.get(action).release();
-            }            
+        let instrument = this.instruments.get(action);
+        if(instrument.is_releasing() || !instrument.has_started()) {
+            instrument.play_note_string(note);
         } else {
-            this.instruments.set(action, this.startBeep(note));
-        }
+            this.instruments.get(action).release();
+        }            
+    }
+
+    buildCurrentInstrument() {
+        let instr = new instrument.Instrument(1, 0.01, 1, 0.02, 0.3, 0.2);
+        let overtone_relative_amplitudes = getInstrumentLibrary().currentInstrument.instrumentSound.overtoneRelativeAmplitudes;
+        instr.set_overtone_relative_amplitudes(overtone_relative_amplitudes);
+        return instr;
     }
 
     startBeep = (note = "") => {
@@ -99,9 +103,7 @@ class Instrument extends Component {
         // decay_seconds: f32,
         // sustain_amplitude: f32,
         // release_seconds: f32,
-        let instr = new instrument.Instrument(1, 0.01, 1, 0.02, 0.3, 0.2);
-        let overtone_relative_amplitudes = getInstrumentLibrary().currentInstrument.instrumentSound.overtoneRelativeAmplitudes;
-        instr.set_overtone_relative_amplitudes(overtone_relative_amplitudes);
+        let instr = this.buildCurrentInstrument();
         if(getInstrumentLibrary().currentInstrument.title !== "None"){
             instr.play_note_string(note);
         }
