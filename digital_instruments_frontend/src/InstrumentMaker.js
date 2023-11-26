@@ -68,9 +68,9 @@ class InstrumentMaker extends React.Component {
         "KeyL", "KeyM", "KeyN", "KeyO", "KeyP", "KeyQ", "KeyR", "KeyS", "KeyT", "KeyU", "KeyV", "KeyW",
         "KeyX", "KeyY", "KeyZ", "Digit0", "Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7",
         "Digit8", "Digit9"]
-        let notes = ['A2', 'A#2', 'B2', 'C2', 'C#2', 'D2', 'D#2', 'E2', 'F2', 'F#2', 'G2', 'G#2',
-        'A3', 'A#3', 'B3', 'C3', 'C#3', 'D3', 'D#3', 'E3', 'F3', 'F#3', 'G3', 'G#3',
-        'A4', 'A#4', 'B4', 'C4', 'C#4', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G4', 'G#4'];
+        let notes = ['A1', 'A#1', 'B1', 'C2', 'C#2', 'D2', 'D#2', 'E2', 'F2', 'F#2', 'G2', 'G#2',
+        'A2', 'A#2', 'B2', 'C3', 'C#3', 'D3', 'D#3', 'E3', 'F3', 'F#3', 'G3', 'G#3',
+        'A3', 'A#3', 'B3', 'C4', 'C#4', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G4', 'G#4'];
         return (
             <Card className="h-full flex flex-col">
                 <div className="overflow-y-scroll">
@@ -105,13 +105,6 @@ class InstrumentMaker extends React.Component {
                     <div>
                     <div>
                     {this.state.keyBinds.map((bind, index) => {
-                        notes = notes.map(note => {
-                            return {
-                                label: note,
-                                value: note,
-                                description: 'Just another note.'
-                            }
-                        });
                         return (
                         <div key={index} className="content-start">
                         <Select className="w-32" label='Key' placeholder="Select a Key" onChange={e => this.setKey(index, e.target.value)}>
@@ -121,8 +114,8 @@ class InstrumentMaker extends React.Component {
                             <SelectItem key="note">Play Note</SelectItem>
                             <SelectItem key="toggleNote">Toggle Note</SelectItem>
                         </Select>
-                        <Select className="w-32" items={notes} label='Note' placeholder="Select a Note" onChange={e => this.setNote(index, e.target.value)}>
-                            {(note) => <SelectItem key={note.value}>{note.label}</SelectItem>}
+                        <Select className="w-32" label='Note' placeholder="Select a Note" onChange={e => this.setNote(index, e.target.value)}>
+                            {notes.map(note => <SelectItem key={note}>{note}</SelectItem>)}
                         </Select>
                         </div>
                         )
