@@ -84,7 +84,8 @@ class Instrument extends Component {
     }
 
     buildCurrentInstrument() {
-        let instr = new instrument.Instrument(1, 0.01, 1, 0.02, 0.3, 0.2);
+        let [volume, attackSeconds, attackAmplitude, decaySeconds, sustainAmplitude, releaseSeconds] = getCurrentInstrument().instrumentSound.amplitudeValues;
+        let instr = new instrument.Instrument(volume, attackSeconds, attackAmplitude, decaySeconds, sustainAmplitude, releaseSeconds);
         let overtone_relative_amplitudes = getCurrentInstrument().instrumentSound.overtoneRelativeAmplitudes;
         instr.set_overtone_relative_amplitudes(overtone_relative_amplitudes);
         return instr;
@@ -142,14 +143,6 @@ class Instrument extends Component {
         if(this.downBinds.has('MouseMoveY')) {
             this.downBinds.get('MouseMoveY')(event);
         }
-    }
-
-    _readVolumeGraph = () => {
-        let volumeGraph = document.getElementById('volumeGraph');
-        let volumeData = volumeGraph.volumeData;
-
-        console.log(volumeData);
-        return volumeData;
     }
 
     componentDidMount(){

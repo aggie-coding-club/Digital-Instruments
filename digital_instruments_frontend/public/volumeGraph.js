@@ -38,7 +38,7 @@ var options = {
                 label: "Release data",
                 data: [
                     {
-                        x: 0.08,
+                        x: MAX_X - 0.2,
                         y: 0.5,
                     },
                     {
@@ -63,7 +63,7 @@ var options = {
                         y: 0.5,
                     },
                     {
-                        x: 0.08,
+                        x: MAX_X - 0.2,
                         y: 0.5,
                     },
                 ],
@@ -79,6 +79,7 @@ var options = {
     },
     options: {
         layout: {
+            autoPadding: true,
             padding: {
                 left: 20,
                 right: 20,
@@ -89,16 +90,28 @@ var options = {
         scales: {
             y: {
                 beginAtZero: true,
-                max: MAX_Y + 0.012,
+                max: MAX_Y + 0.03,
             },
             x: {
                 beginAtZero: true,
-                max: MAX_X + 0.0006,
+                max: MAX_X + 0.003,
             },
         },
         plugins: {
             tooltip: {
-                enabled: false,
+                enabled: true,
+                callbacks: {
+                    title: () => {""},
+                    label: (context) => {
+                        let datasetIndex = context.datasetIndex;
+                        if (datasetIndex === 2) {
+                            return "";
+                        }
+                        let index = context.dataIndex;
+                        let value = context.dataset.data[index];
+                        return `(${value.x.toFixed(3)}, ${value.y.toFixed(3)})`;
+                    },
+                }
             },
             title: {
                 display: true,
@@ -110,6 +123,7 @@ var options = {
             subtitle: {
                 display: true,
                 text: "Drag the points around to set the volume graph of each note",
+                margin: 10,
             },
             legend: {
                 display: false,
@@ -117,12 +131,11 @@ var options = {
             dragData: {
                 showTooltip: true,
                 dragX: true,
+                round: 4,
                 onDragStart: function (e, datasetIndex, index, value) {
-                    // first point not draggable
                     if (datasetIndex === 0 && index === 0) {
                         return false;
                     }
-                    // last point not draggable
                     if (
                         datasetIndex === 1 &&
                         index ===
@@ -130,17 +143,14 @@ var options = {
                     ) {
                         return false;
                     }
-                    // sustain line not draggable
                     if (datasetIndex === 2) {
                         return false;
                     }
                 },
                 onDrag: function (e, datasetIndex, index, value) {
-                    // first point not draggable
                     if (datasetIndex === 0 && index === 0) {
                         return false;
                     }
-                    // last point not draggable
                     if (
                         datasetIndex === 1 &&
                         index ===
@@ -148,12 +158,10 @@ var options = {
                     ) {
                         return false;
                     }
-                    // sustain line not draggable
                     if (datasetIndex === 2) {
                         return false;
                     }
 
-                    // fix max and min values
                     if (value.x < MIN_X) {
                         value.x = MIN_X;
                     }
@@ -167,7 +175,6 @@ var options = {
                         value.y = MAX_Y;
                     }
 
-                    // prevent crossing previous point
                     if (
                         index > 0 &&
                         value.x <
@@ -177,7 +184,6 @@ var options = {
                             chart.data.datasets[datasetIndex].data[index - 1].x;
                     }
 
-                    // prevent crossing next point
                     if (
                         index <
                             chart.data.datasets[datasetIndex].data.length - 1 &&
@@ -188,7 +194,6 @@ var options = {
                             chart.data.datasets[datasetIndex].data[index + 1].x;
                     }
 
-                    // fix sustain points
                     if (datasetIndex === 0 && index === 2) {
                         let releasePoint = chart.data.datasets[1].data[0];
                         releasePoint.y = value.y;
@@ -197,7 +202,6 @@ var options = {
                         attackPoint.y = value.y;
                     }
 
-                    // prevent crossing sustain line
                     if (
                         datasetIndex === 0 &&
                         index === 2 &&
@@ -218,7 +222,6 @@ var options = {
                             chart.data.datasets[0].data[2].x + SUSTAIN_MARGIN;
                     }
 
-                    // fix sustain line, must be after everything else
                     let sustainStartPoint = chart.data.datasets[2].data[0];
                     let sustainEndPoint = chart.data.datasets[2].data[1];
                     sustainStartPoint.x = chart.data.datasets[0].data[2].x;
@@ -239,7 +242,7 @@ var options = {
                         chart.data.datasets[1].data[1].x -
                         chart.data.datasets[1].data[0].x;
 
-                    canvas["volumeData"] = [
+                    canvas["amplitudeValues"] = [
                         attackSeconds,
                         attackAmplitude,
                         decaySeconds,
@@ -252,7 +255,7 @@ var options = {
     },
 };
 const canvas = document.getElementById("volumeGraph");
-canvas["volumeData"] = [0.01, 1, 0.02, 0.3, 0.2];
+canvas["amplitudeValues"] = [0.01, 1, 0.02, 0.3, 0.2];
 const ctx = document.getElementById("volumeGraph").getContext("2d");
 
 const chart = new Chart(ctx, options);

@@ -1,6 +1,7 @@
 import React from "react";
 import {Slider, Button, Card, Select, SelectItem} from "@nextui-org/react";
 import FunctionGraph from "./FunctionGraph";
+import VolumeGraph from "./VolumeGraph";
 import {Input} from "@nextui-org/react";
 import {addInstrument} from './InstrumentLibrary';
 
@@ -22,13 +23,15 @@ class InstrumentMaker extends React.Component {
     }
 
     createInstrument() {
+        let amplitudeValues = document.getElementById('volumeGraph').amplitudeValues;
+
         let instrument =  {
             title: this.state.name,
             img: this.state.imageUrl,
             description: this.state.description,
             instrumentSound: {
                 overtoneRelativeAmplitudes: this.state.multipliers,
-                amplitudeValues: [1, 0.01, 1, 0.02, 0.3, 0.2],
+                amplitudeValues: [1, ...amplitudeValues],
             },
             binds: this.state.keyBinds,
         }
@@ -61,6 +64,13 @@ class InstrumentMaker extends React.Component {
     }
 
     render() {
+        let keys = ["KeyA", "KeyB", "KeyC", "KeyD", "KeyE", "KeyF", "KeyG", "KeyH", "KeyI", "KeyJ", "KeyK",
+        "KeyL", "KeyM", "KeyN", "KeyO", "KeyP", "KeyQ", "KeyR", "KeyS", "KeyT", "KeyU", "KeyV", "KeyW",
+        "KeyX", "KeyY", "KeyZ", "Digit0", "Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7",
+        "Digit8", "Digit9"]
+        let notes = ['A2', 'A#2', 'B2', 'C2', 'C#2', 'D2', 'D#2', 'E2', 'F2', 'F#2', 'G2', 'G#2',
+        'A3', 'A#3', 'B3', 'C3', 'C#3', 'D3', 'D#3', 'E3', 'F3', 'F#3', 'G3', 'G#3',
+        'A4', 'A#4', 'B4', 'C4', 'C#4', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G4', 'G#4'];
         return (
             <Card className="h-full flex flex-col">
                 <div className="overflow-y-scroll">
@@ -89,18 +99,12 @@ class InstrumentMaker extends React.Component {
                         </div>
                         <div><FunctionGraph multipliers={this.state.multipliers}/></div>
                     </div>
+                    <div className="text-center">
+                        <VolumeGraph/>
+                    </div>
                     <div>
                     <div>
                     {this.state.keyBinds.map((bind, index) => {
-                        let keys = ["KeyA", "KeyB", "KeyC", "KeyD", "KeyE", "KeyF", "KeyG", "KeyH", "KeyI", "KeyJ", "KeyK",
-                            "KeyL", "KeyM", "KeyN", "KeyO", "KeyP", "KeyQ", "KeyR", "KeyS", "KeyT", "KeyU", "KeyV", "KeyW",
-                            "KeyX", "KeyY", "KeyZ", "Digit0", "Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7",
-                            "Digit8", "Digit9"]
-                        let notes = ['A2', 'A#2', 'B2', 'C2', 'C#2', 'D2', 'D#2', 'E2', 'F2', 'F#2', 'G2', 'G#2',
-                                     'A3', 'A#3', 'B3', 'C3', 'C#3', 'D3', 'D#3', 'E3', 'F3', 'F#3', 'G3', 'G#3',
-                                     'A4', 'A#4', 'B4', 'C4', 'C#4', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G4', 'G#4'];
-
-                        
                         notes = notes.map(note => {
                             return {
                                 label: note,
