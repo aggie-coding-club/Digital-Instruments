@@ -6,6 +6,7 @@ import InstrumentCards from './InstrumentCards';
 
 class App extends Component {
   render() {
+
     return (
       <NextUIProvider>
         <InstrumentCards name="Instrument Name" description="This is the description"/>
