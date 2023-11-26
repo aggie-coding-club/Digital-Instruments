@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import {getInstrumentLibrary, addUpdateCallback, getCurrentInstrument} from './InstrumentLibrary';
 const instrument = await import('digital_instruments');
 
 class Instrument extends Component {
@@ -7,64 +8,30 @@ class Instrument extends Component {
         this.instruments = new Map();
         this.downBinds = new Map();
         this.upBinds = new Map();
+        this.updateInstruments();
+        this.updateCallback = this.updateCallback.bind(this);
+        addUpdateCallback(this.updateCallback);
+    }
 
-        const keyBinds = {
-            'KeyQ': 'C3',
-            'KeyW': 'C#3',
-            'KeyE': 'D3',
-            'KeyR': 'Eb3',
-            'KeyT': 'E3',
-            'KeyY': 'F3',
-            'KeyU': 'F#3',
-            'KeyI': 'G3',
-            'KeyO': 'G#3',
-            'KeyP': 'A3',
-            'BracketLeft': 'Bb3',
-            'BracketRight': 'B3',
-
-            'KeyA': 'C4',
-            'KeyS': 'C#4',
-            'KeyD': 'D4',
-            'KeyF': 'Eb4',
-            'KeyG': 'E4',
-            'KeyH': 'F4',
-            'KeyJ': 'F#4',
-            'KeyK': 'G4',
-            'KeyL': 'G#4',
-            'Semicolon': 'A4',
-            'Quote': 'Bb4',
-            'ShiftRight': 'B4',
-
-            'KeyZ': 'C5',
-            'KeyX': 'C#5',
-            'KeyC': 'D5',
-            'KeyV': 'Eb5',
-            'KeyB': 'E5',
-            'KeyN': 'F5',
-            'KeyM': 'F#5',
-            'Comma': 'G5',
-            'Period': 'G#5',
-            'Slash': 'A5',
-        }
-        this.keyBinds = keyBinds;
-
-        for (const [key, value] of Object.entries(keyBinds)) {
-            this.createBind(key, 'note', value);
-        }
-
-        this.createBind('MouseMoveY', 'volume');
+    updateCallback() {
+        this.updateInstruments();
     }
 
     // A toggle bind remains active until the key is pressed a second time.
     // Default behavior is to remain active while the key is held down.
     // action is the key or thing done to activate the bind.
-    createBind(action, type, value = null) {
-        if(this.keyBinds.hasOwnProperty(action)) {
+    createBind(bind) {
+        let action = bind.action;
+        let type = bind.type;
+        let value = bind.value;
+        if(action.startsWith('Key')) {
+            this.instruments.set(action, this.buildCurrentInstrument());
             if(type === 'toggleNote') {
                 this.downBinds.set(action, () => this.toggleBeep(action, value));
             } else if(type === 'note') {
                 this.downBinds.set(action, () => {
-                    if(!this.instruments.has(action) || this.instruments.get(action).is_releasing()) {
+
+                    if(this.instruments.get(action).is_releasing() || !this.instruments.get(action).has_started()) {
                         this.toggleBeep(action, value);
                     }
                 });
@@ -72,28 +39,55 @@ class Instrument extends Component {
             } else {
                 alert('Type \'' + type + '\' is not supported.')
             }
-        } else if(action === 'MouseMoveY') {
+        } else if(action === 'MouseMoveY' || action === 'MouseMoveX') {
+            let movementType = 'movementX';
+            if(action === 'MouseMoveY') {
+                movementType = 'movementY'
+            }
             if(type === 'volume') {
                 this.downBinds.set(action, (event) => {
                     for(let i of this.instruments.values()) {
-                        i.update_volume(event.movementY / 1000);
+                        i.update_volume(event[movementType] / 1000);
+                    }
+                });
+            } else if(type === 'frequency') {
+                this.downBinds.set(action, (event) => {
+                    for(let i of this.instruments.values()) {
+                        i.update_frequency_bend(-1, 1, event[movementType] / 1000);
                     }
                 });
             }
         }
     }
 
-    toggleBeep(action, note) {
-        if(this.instruments.has(action)) {
-            let instrument = this.instruments.get(action);
-            if(instrument.is_releasing()) {
-                instrument.play_note_string(note);
-            } else {
-                this.instruments.get(action).release();
-            }            
-        } else {
-            this.instruments.set(action, this.startBeep(note));
+    updateInstruments() {
+        this.instruments.forEach((instrument, key) => {
+            instrument.release();
+        });
+        this.instruments.clear();
+        this.upBinds.clear();
+        this.downBinds.clear();
+        if(getInstrumentLibrary().currentInstrument === 'None') return;
+        let current = getCurrentInstrument();
+        for(let bind of current.binds) {
+            this.createBind(bind);
         }
+    }
+
+    toggleBeep(action, note) {
+        let instrument = this.instruments.get(action);
+        if(instrument.is_releasing() || !instrument.has_started()) {
+            instrument.play_note_string(note);
+        } else {
+            this.instruments.get(action).release();
+        }            
+    }
+
+    buildCurrentInstrument() {
+        let instr = new instrument.Instrument(1, 0.01, 1, 0.02, 0.3, 0.2);
+        let overtone_relative_amplitudes = getCurrentInstrument().instrumentSound.overtoneRelativeAmplitudes;
+        instr.set_overtone_relative_amplitudes(overtone_relative_amplitudes);
+        return instr;
     }
 
     startBeep = (note = "") => {
@@ -103,20 +97,19 @@ class Instrument extends Component {
         // decay_seconds: f32,
         // sustain_amplitude: f32,
         // release_seconds: f32,
-
-        let volumeData = this._readVolumeGraph();
-        let instr = new instrument.Instrument(1, volumeData[0], volumeData[1], volumeData[2], volumeData[3], volumeData[4]);
-        let overtone_relative_amplitudes = [1.5, 0.3, 0.2, 0.1, 0.02];
-        instr.set_overtone_relative_amplitudes(overtone_relative_amplitudes);
-        instr.play_note_string(note);
+        let instr = this.buildCurrentInstrument();
+        if(getInstrumentLibrary().currentInstrument !== "None"){
+            instr.play_note_string(note);
+        }
         return instr;
     }
 
     _handleDocumentClick = (event) => {
-        console.log(event);
+        if(this.props.enabled === false) return;
     }
 
     _handleKeyDown = (event) => {
+        if(this.props.enabled === false) return;
         // If the event is not case sensitive, it should use the code
         if(this.downBinds.has(event.code)) {
             this.downBinds.get(event.code)();
@@ -129,6 +122,7 @@ class Instrument extends Component {
     }
 
     _handleKeyUp = (event) => {
+        if(this.props.enabled === false) return;
         // If the event is not case sensitive, it should use the code
         if(this.upBinds.has(event.code)) {
             this.upBinds.get(event.code)();
@@ -141,6 +135,7 @@ class Instrument extends Component {
     }
 
     _handleMouseMove = (event) => {
+        if(this.props.enabled === false) return;
         if(this.downBinds.has('MouseMoveX')) {
             this.downBinds.get('MouseMoveX')(event);
         }
@@ -174,7 +169,6 @@ class Instrument extends Component {
     render() {
         return (
             <div>
-                <p>Press the A-L and Z-V keys to play notes.</p>
             </div>
         );
     }
