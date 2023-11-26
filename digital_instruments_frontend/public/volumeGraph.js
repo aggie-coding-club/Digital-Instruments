@@ -114,8 +114,8 @@ var options = {
                 }
             },
             title: {
-                display: true,
-                text: "Volume graph",
+                display: false,
+                text: "Volume Graph",
                 font: {
                     size: 20,
                 },

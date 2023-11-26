@@ -1,9 +1,10 @@
 import React from "react";
-import {Slider, Button, Card, Select, SelectItem} from "@nextui-org/react";
+import {Slider, Button, Card, Select, SelectItem, Divider} from "@nextui-org/react";
 import FunctionGraph from "./FunctionGraph";
 import VolumeGraph from "./VolumeGraph";
 import {Input} from "@nextui-org/react";
 import {addInstrument} from './InstrumentLibrary';
+import {Delete} from 'react-iconly'
 
 class InstrumentMaker extends React.Component {
     constructor() {
@@ -20,6 +21,13 @@ class InstrumentMaker extends React.Component {
 
     addMultiplier() {
         this.setMultiplier(this.state.multipliers.length, 0.5);
+    }
+
+    removeMultiplier() {
+        let multipliers = this.state.multipliers;
+        if(multipliers.length === 1) return;
+        multipliers.pop();
+        this.setState({...this.state, multipliers: multipliers});
     }
 
     createInstrument() {
@@ -42,6 +50,12 @@ class InstrumentMaker extends React.Component {
     addKeybind = () => {
         let keyBinds = this.state.keyBinds;
         keyBinds.push({action: '', type: '', value: ''});
+        this.setState({...this.state, keyBinds: keyBinds});
+    }
+
+    removeKeybind = (index) => {
+        let keyBinds = this.state.keyBinds;
+        keyBinds.splice(index, 1);
         this.setState({...this.state, keyBinds: keyBinds});
     }
 
@@ -73,10 +87,13 @@ class InstrumentMaker extends React.Component {
         'A3', 'A#3', 'B3', 'C4', 'C#4', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G4', 'G#4'];
         return (
             <Card className="h-full flex flex-col">
-                <div className="overflow-y-scroll">
+                <div className="overflow-y-scroll p-4">
+                <h2 className="text-center text-xl m-4">Instrument Information</h2>
                     <Input className="p-1" placeholder="Instrument Name" onChange={(e) => this.setState({...this.state, name: e.target.value})}></Input>
                     <Input className="p-1" placeholder="Description" onChange={(e) => this.setState({...this.state, description: e.target.value})}></Input>
                     <Input className="p-1" placeholder="Image URL" onChange={(e) => this.setState({...this.state, imageUrl: e.target.value})}></Input>
+                    <Divider/>
+                    <h2 className="text-center text-xl m-4">Sound Waveform</h2>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             {this.state.multipliers.map((multiplier, index) => {
@@ -96,31 +113,40 @@ class InstrumentMaker extends React.Component {
                             >
                             Add Amplitude
                             </Button>
+                            <Button
+                            className="shadow-lg"
+                            onClick={() => this.removeMultiplier()}
+                            >
+                            Remove Amplitude
+                            </Button>
                         </div>
                         <div><FunctionGraph multipliers={this.state.multipliers}/></div>
                     </div>
+                    <Divider/>
+                    <h2 className="text-center text-xl mt-4">Volume Graph</h2>
                     <div className="text-center">
                         <VolumeGraph/>
                     </div>
+                    <Divider/>
                     <div>
-                    <div>
-                    {this.state.keyBinds.map((bind, index) => {
-                        return (
-                        <div key={index} className="content-start">
-                        <Select className="w-32" label='Key' placeholder="Select a Key" onChange={e => this.setKey(index, e.target.value)}>
-                            {keys.map(code => (<SelectItem key={code}>{code}</SelectItem>))}
-                        </Select>
-                        <Select className="w-64" label='Bind Type' placeholder="Select a Type" onChange={e => this.setType(index, e.target.value)}>
-                            <SelectItem key="note">Play Note</SelectItem>
-                            <SelectItem key="toggleNote">Toggle Note</SelectItem>
-                        </Select>
-                        <Select className="w-32" label='Note' placeholder="Select a Note" onChange={e => this.setNote(index, e.target.value)}>
-                            {notes.map(note => <SelectItem key={note}>{note}</SelectItem>)}
-                        </Select>
-                        </div>
-                        )
-                    })}
-                    </div>
+                        <h2 className="text-center text-xl m-4">Keybinds</h2>
+                        {this.state.keyBinds.map((bind, index) => {
+                            return (
+                            <div key={index} className="content-start">
+                            <Select className="w-32" label='Key' placeholder="Select a Key" onChange={e => this.setKey(index, e.target.value)}>
+                                {keys.map(code => (<SelectItem key={code}>{code}</SelectItem>))}
+                            </Select>
+                            <Select className="w-64" label='Bind Type' placeholder="Select a Type" onChange={e => this.setType(index, e.target.value)}>
+                                <SelectItem key="note">Play Note</SelectItem>
+                                <SelectItem key="toggleNote">Toggle Note</SelectItem>
+                            </Select>
+                            <Select className="w-32" label='Note' placeholder="Select a Note" onChange={e => this.setNote(index, e.target.value)}>
+                                {notes.map(note => <SelectItem key={note}>{note}</SelectItem>)}
+                            </Select>
+                            <Button className="hover:bg-red-500 rounded h-14" onClick={() => this.removeKeybind(index)}><Delete></Delete></Button>
+                            </div>
+                            )
+                        })}
                         <Button onClick={this.addKeybind}>Add Keybind</Button>
                     </div>
                 </div>
