@@ -21,6 +21,7 @@ pub struct Instrument {
     releasing: Arc<AtomicBool>,
     overtone_relative_amplitudes: Arc<Mutex<Vec<f64>>>,
     stream: Option<Stream>,
+    frequency_bend: Arc<AtomicF64>,
 }
 
 #[wasm_bindgen]
@@ -53,7 +54,12 @@ impl Instrument {
             releasing: Arc::new(AtomicBool::new(false)),
             overtone_relative_amplitudes: Arc::new(Mutex::new(Vec::<f64>::new())),
             stream: None,
+            frequency_bend: Arc::new(0.0.into()),
         }
+    }
+
+    pub fn has_started(&self) -> bool {
+        self.stream.is_some()
     }
 
     pub fn is_releasing(&self) -> bool {
@@ -136,6 +142,20 @@ impl Instrument {
         *relative_amplitudes = overtone_relative_amplitudes;
     }
 
+    pub fn set_frequency_bend(&self, frequency_bend: f64) {
+        self.frequency_bend.store(frequency_bend, Ordering::Relaxed);
+    }
+
+    pub fn update_frequency_bend(&self, min_bend: f64, max_bend: f64, change: f64) {
+        let mut updated_frequency = self.frequency_bend.load(Ordering::Relaxed) + change;
+        if updated_frequency > max_bend {
+            updated_frequency = max_bend;
+        } else if updated_frequency < min_bend {
+            updated_frequency = min_bend;
+        }
+        self.frequency_bend.store(updated_frequency, Ordering::Relaxed);
+    }
+
     pub fn set_volume(&self, volume: f64) {
         self.volume.store(volume, Ordering::Relaxed);
     }
@@ -175,6 +195,7 @@ impl Instrument {
         let release_seconds = self.release_seconds;
         let mut release_start = 0.0;
         let is_releasing = self.releasing.clone();
+        let frequency_bend = self.frequency_bend.clone();
 
         let mut next_value = move || {
             sample_clock += 1.0 / sample_rate;
@@ -184,6 +205,7 @@ impl Instrument {
             }
 
             let mut amplitude_multiplier = sustain_amplitude;
+            let freq = freq * frequency_bend.load(Ordering::Relaxed) + freq;
 
             if sample_clock < attack_seconds {
                 amplitude_multiplier = attack_amplitude * sample_clock / attack_seconds;
