@@ -93,7 +93,7 @@ impl Instrument {
     /// # Arguments
     ///
     /// * `octave` - An optional integer representing the octave to play the note in. Defaults to 4 if not provided.
-    /// * `note` - An optional integer representing the note to play where 0 is A, 1 is A#, and so on. Defaults to 0 if not provided.
+    /// * `note` - An optional integer representing the note to play where 0 is C, 1 is C#, and so on. Defaults to 0 if not provided.
     ///
     /// # Returns
     ///
@@ -101,7 +101,7 @@ impl Instrument {
     pub fn play_octave_note(&mut self, octave: i32, note: i32) {
         self.play_note(
             Some(
-                ((octave - 4) * 12) + note
+                ((octave - 4) * 12) + note - 9
             ));
     }
 
@@ -117,19 +117,23 @@ impl Instrument {
     pub fn play_note_string(&mut self, notestring: String) {
         let octave = notestring.chars().last().unwrap_or('4').to_digit(10).unwrap_or(4) as i32;
         let note = match notestring.chars().nth(0).unwrap_or('A') {
-            'A' => 0,
-            'B' => 2,
-            'C' => 3,
-            'D' => 5,
-            'E' => 7,
-            'F' => 8,
-            'G' => 10,
+            'C' => 0,
+            'D' => 2,
+            'E' => 4,
+            'F' => 5,
+            'G' => 7,
+            'A' => 9,
+            'B' => 11,
             _ => 0,
         };
 
         let modifier = match notestring.chars().nth(1).unwrap_or(' ') {
             '#' => 1,
-            'b' => -1,
+            'b' => match notestring.chars().nth(2).unwrap_or(' ') {
+                'b' => -2,
+                _ => -1,
+            },
+            'x' => 2,
             _ => 0,
         };
 
