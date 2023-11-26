@@ -5,7 +5,7 @@ import {Delete, Plus} from 'react-iconly'
 import InstrumentMaker from "./InstrumentMaker";
 import Instrument from "./Instrument";
 
-const list = getInstrumentLibrary().list;
+const list = getInstrumentLibrary().instruments;
 
 class InstrumentCards extends React.Component {
     constructor() {
@@ -38,7 +38,7 @@ class InstrumentCards extends React.Component {
                 </CardHeader>
                 <CardBody className="overflow-visible p-0">
                     <Button className="h-80" onClick={() => {
-                        setCurrentInstrument(item);
+                        setCurrentInstrument(item.title);
                     }}>
                         <Image
                         shadow="sm"
@@ -55,14 +55,12 @@ class InstrumentCards extends React.Component {
                 </CardFooter>
                 </Card>
             ))}
-            <Card shadow="sm" isPressable onPress={() => {
-                    // setCurrentInstrument(item);
-                }}>
-                <CardBody className="overflow-visible p-0" onClick={() => this.setState({makerVisibility: 'visible'})}>
+            <Card shadow="sm" isPressable onPress={() => this.setState({makerVisibility: 'visible'})}>
+                <CardBody className="overflow-visible p-0">
                     <Plus className="flex-1 w-2/3 mx-auto p-4 text-lg bg-white h-full"></Plus>
                 </CardBody>
             </Card>
-            <div className={'fixed top-0 mx-auto inset-x-0 h-full z-10 max-w-5xl ' + this.state.makerVisibility}><InstrumentMaker></InstrumentMaker></div>
+            <div className={'fixed top-0 mx-auto inset-x-0 h-full z-10 max-w-5xl ' + this.state.makerVisibility}><InstrumentMaker exitCallback={() => this.setState({makerVisibility: 'invisible'})}></InstrumentMaker></div>
             </div>
             </div>
         )

@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {getInstrumentLibrary} from './InstrumentLibrary';
+import {getInstrumentLibrary, addUpdateCallback, getCurrentInstrument} from './InstrumentLibrary';
 const instrument = await import('digital_instruments');
 
 class Instrument extends Component {
@@ -8,29 +8,22 @@ class Instrument extends Component {
         this.instruments = new Map();
         this.downBinds = new Map();
         this.upBinds = new Map();
-        this.lastInstrument = null;
+        this.updateInstruments();
+        this.updateCallback = this.updateCallback.bind(this);
+        addUpdateCallback(this.updateCallback);
+    }
 
-        this.createBind('KeyA', 'note', 'A3');
-        this.createBind('KeyS', 'note', 'A#3');
-        this.createBind('KeyD', 'note', 'B3');
-        this.createBind('KeyF', 'note', 'C3');
-        this.createBind('KeyG', 'note', 'C#3');
-        this.createBind('KeyH', 'note', 'D3');
-        this.createBind('KeyJ', 'note', 'D#3');
-        this.createBind('KeyK', 'note', 'E3');
-        this.createBind('KeyL', 'note', 'F3');
-        this.createBind('KeyZ', 'note', 'F#3');
-        this.createBind('KeyX', 'note', 'G3');
-        this.createBind('KeyC', 'note', 'G#3');
-        this.createBind('KeyV', 'note', 'A4');
-        this.createBind('MouseMoveY', 'volume');
-        this.createBind('MouseMoveX', 'frequency');
+    updateCallback() {
+        this.updateInstruments();
     }
 
     // A toggle bind remains active until the key is pressed a second time.
     // Default behavior is to remain active while the key is held down.
     // action is the key or thing done to activate the bind.
-    createBind(action, type, value = null) {
+    createBind(bind) {
+        let action = bind.action;
+        let type = bind.type;
+        let value = bind.value;
         if(action.startsWith('Key')) {
             this.instruments.set(action, this.buildCurrentInstrument());
             if(type === 'toggleNote') {
@@ -68,18 +61,20 @@ class Instrument extends Component {
     }
 
     updateInstruments() {
-        let current = getInstrumentLibrary().currentInstrument;
-        if(current !== this.lastInstrument) {
-            this.instruments.forEach((instrument, key) => {
-                instrument.release();
-                this.instruments.set(key, this.buildCurrentInstrument());
-            });
+        this.instruments.forEach((instrument, key) => {
+            instrument.release();
+        });
+        this.instruments.clear();
+        this.upBinds.clear();
+        this.downBinds.clear();
+        if(getInstrumentLibrary().currentInstrument === 'None') return;
+        let current = getCurrentInstrument();
+        for(let bind of current.binds) {
+            this.createBind(bind);
         }
-        this.lastInstrument = current;
     }
 
     toggleBeep(action, note) {
-        this.updateInstruments();
         let instrument = this.instruments.get(action);
         if(instrument.is_releasing() || !instrument.has_started()) {
             instrument.play_note_string(note);
@@ -90,13 +85,12 @@ class Instrument extends Component {
 
     buildCurrentInstrument() {
         let instr = new instrument.Instrument(1, 0.01, 1, 0.02, 0.3, 0.2);
-        let overtone_relative_amplitudes = getInstrumentLibrary().currentInstrument.instrumentSound.overtoneRelativeAmplitudes;
+        let overtone_relative_amplitudes = getCurrentInstrument().instrumentSound.overtoneRelativeAmplitudes;
         instr.set_overtone_relative_amplitudes(overtone_relative_amplitudes);
         return instr;
     }
 
     startBeep = (note = "") => {
-        this.updateInstruments();
         // volume: f32,
         // attack_seconds: f32,
         // attack_amplitude: f32,
@@ -104,7 +98,7 @@ class Instrument extends Component {
         // sustain_amplitude: f32,
         // release_seconds: f32,
         let instr = this.buildCurrentInstrument();
-        if(getInstrumentLibrary().currentInstrument.title !== "None"){
+        if(getInstrumentLibrary().currentInstrument !== "None"){
             instr.play_note_string(note);
         }
         return instr;
