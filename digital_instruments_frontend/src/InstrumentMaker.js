@@ -10,7 +10,7 @@ class InstrumentMaker extends React.Component {
     constructor() {
         super()
 
-        this.state = {multipliers: [0.5, 0.5], keyBinds: []};
+        this.state = {multipliers: [0.5, 0.5], keyBinds: [], name: "", description: "", imageUrl: ""};
     }
 
     setMultiplier(index, value) {
@@ -59,7 +59,7 @@ class InstrumentMaker extends React.Component {
         this.setState({...this.state, keyBinds: keyBinds});
     }
 
-    setNote = (bindIndex, note) => {
+    setValue = (bindIndex, note) => {
         let keyBinds = this.state.keyBinds;
         keyBinds[bindIndex].value = note;
         this.setState({...this.state, keyBinds: keyBinds});
@@ -74,17 +74,30 @@ class InstrumentMaker extends React.Component {
     setType = (bindIndex, type) => {
         let keyBinds = this.state.keyBinds;
         keyBinds[bindIndex].type = type;
+        if(!(type === 'note' || type === 'toggleNote')) {
+            keyBinds[bindIndex].value = 1;
+        }
         this.setState({...this.state, keyBinds: keyBinds});
     }
 
+    buildKeyListener(index) {
+        return (e) => {
+            let keyBinds = this.state.keyBinds;
+            keyBinds[index].action = e.code;
+            this.setState({...this.state, keyBinds: keyBinds});
+        }
+    }
+
+    addKeyListener = (index) => {
+        document.addEventListener('keydown', this.buildKeyListener(index), {once: true});
+    }
+
     render() {
-        let keys = ["KeyA", "KeyB", "KeyC", "KeyD", "KeyE", "KeyF", "KeyG", "KeyH", "KeyI", "KeyJ", "KeyK",
-        "KeyL", "KeyM", "KeyN", "KeyO", "KeyP", "KeyQ", "KeyR", "KeyS", "KeyT", "KeyU", "KeyV", "KeyW",
-        "KeyX", "KeyY", "KeyZ", "Digit0", "Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7",
-        "Digit8", "Digit9"]
         let notes = ['A1', 'A#1', 'B1', 'C2', 'C#2', 'D2', 'D#2', 'E2', 'F2', 'F#2', 'G2', 'G#2',
         'A2', 'A#2', 'B2', 'C3', 'C#3', 'D3', 'D#3', 'E3', 'F3', 'F#3', 'G3', 'G#3',
-        'A3', 'A#3', 'B3', 'C4', 'C#4', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G4', 'G#4'];
+        'A3', 'A#3', 'B3', 'C4', 'C#4', 'D4', 'D#4', 'E4', 'F4', 'F#4', 'G4', 'G#4',
+        'A4', 'A#4', 'B4', 'C5', 'C#5', 'D5', 'D#5', 'E5', 'F5', 'F#5', 'G5', 'G#5',
+        'A5', 'A#5', 'B5', 'C6', 'C#6', 'D6', 'D#6', 'E6', 'F6', 'F#6', 'G6', 'G#6'];
         return (
             <Card className="h-full flex flex-col">
                 <div className="overflow-y-scroll p-4">
@@ -131,19 +144,45 @@ class InstrumentMaker extends React.Component {
                     <div>
                         <h2 className="text-center text-xl m-4">Keybinds</h2>
                         {this.state.keyBinds.map((bind, index) => {
+                            let type = this.state.keyBinds[index].type;
+                            let action = this.state.keyBinds[index].action;
+                            let showNoteSelector = type === 'note' || type === 'toggleNote' ? '': 'hidden';
+                            let showVolumeSlider = type === 'volume' ? '': 'hidden';
+                            let showFrequencySlider = type === 'frequency' ? '': 'hidden';
                             return (
-                            <div key={index} className="content-start">
-                            <Select className="w-32" label='Key' placeholder="Select a Key" onChange={e => this.setKey(index, e.target.value)}>
-                                {keys.map(code => (<SelectItem key={code}>{code}</SelectItem>))}
-                            </Select>
+                            <div key={index} className="content-start flex items-stretch">
+                            <Button className="h-14" onClick={() => {this.addKeyListener(index)}}>{action === '' ? 'Click and Press Key' : action}</Button>
                             <Select className="w-64" label='Bind Type' placeholder="Select a Type" onChange={e => this.setType(index, e.target.value)}>
                                 <SelectItem key="note">Play Note</SelectItem>
                                 <SelectItem key="toggleNote">Toggle Note</SelectItem>
+                                <SelectItem key="volume">Set Volume</SelectItem>
+                                <SelectItem key="frequency">Bend Frequency</SelectItem>
                             </Select>
-                            <Select className="w-32" label='Note' placeholder="Select a Note" onChange={e => this.setNote(index, e.target.value)}>
+                            <Select className={"w-32 " + showNoteSelector} label='Note' placeholder="Select a Note" onChange={e => this.setValue(index, e.target.value)}>
                                 {notes.map(note => <SelectItem key={note}>{note}</SelectItem>)}
                             </Select>
-                            <Button className="hover:bg-red-500 rounded h-14" onClick={() => this.removeKeybind(index)}><Delete></Delete></Button>
+                            <Slider 
+                                label="Frequency Bend"
+                                className={'w-48 ' + showFrequencySlider}
+                                fillOffset
+                                color="warning"
+                                getValue={(value) => `${value}x`}
+                                step={0.01} 
+                                maxValue={1.2} 
+                                minValue={0.8} 
+                                defaultValue={1}
+                                onChange={value => this.setValue(index, value)}
+                            />
+                            <Slider 
+                                label="Volume"
+                                className={'w-48 ' + showVolumeSlider}
+                                step={0.01} 
+                                maxValue={1} 
+                                minValue={0} 
+                                defaultValue={1}
+                                onChange={value => this.setValue(index, value)}
+                            />
+                            <Button className="hover:bg-red-500 h-14" onClick={() => this.removeKeybind(index)}><Delete></Delete></Button>
                             </div>
                             )
                         })}
