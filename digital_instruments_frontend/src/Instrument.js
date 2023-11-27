@@ -67,7 +67,7 @@ class Instrument extends Component {
                     }
                 });
             } else {
-                alert('Type \'' + type + '\' is not supported.')
+                alert('Keybind type \'' + type + '\' is not supported. Make sure all your keybinds are set properly!')
             }
         }
     }

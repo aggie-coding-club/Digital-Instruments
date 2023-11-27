@@ -74,8 +74,10 @@ class InstrumentMaker extends React.Component {
     setType = (bindIndex, type) => {
         let keyBinds = this.state.keyBinds;
         keyBinds[bindIndex].type = type;
-        if(!(type === 'note' || type === 'toggleNote')) {
+        if(type === 'volume') {
             keyBinds[bindIndex].value = 1;
+        } else if(type === 'frequency') {
+            keyBinds[bindIndex].value = 0;
         }
         this.setState({...this.state, keyBinds: keyBinds});
     }
@@ -164,14 +166,18 @@ class InstrumentMaker extends React.Component {
                             <Slider 
                                 label="Frequency Bend"
                                 className={'w-48 ' + showFrequencySlider}
-                                fillOffset
                                 color="warning"
-                                getValue={(value) => `${value}x`}
+                                getValue={(value) => {
+                                    let sign = value >= 0 ? '+' : '-';
+                                    return `${sign} ${Math.abs(value)}x`
+                                }}
                                 step={0.01} 
-                                maxValue={1.2} 
-                                minValue={0.8} 
-                                defaultValue={1}
+                                maxValue={0.2} 
+                                minValue={-0.2} 
+                                formatOptions={{signDisplay: 'always'}}
+                                defaultValue={0}
                                 onChange={value => this.setValue(index, value)}
+                                fillOffset={0}
                             />
                             <Slider 
                                 label="Volume"
