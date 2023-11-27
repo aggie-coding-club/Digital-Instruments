@@ -24,7 +24,25 @@ class Instrument extends Component {
         let action = bind.action;
         let type = bind.type;
         let value = bind.value;
-        if(action.startsWith('Key')) {
+        if(action === 'MouseMoveY' || action === 'MouseMoveX') {
+            let movementType = 'movementX';
+            if(action === 'MouseMoveY') {
+                movementType = 'movementY'
+            }
+            if(type === 'volume') {
+                this.downBinds.set(action, (event) => {
+                    for(let i of this.instruments.values()) {
+                        i.update_volume(event[movementType] / 1000);
+                    }
+                });
+            } else if(type === 'frequency') {
+                this.downBinds.set(action, (event) => {
+                    for(let i of this.instruments.values()) {
+                        i.update_frequency_bend(-1, 1, event[movementType] / 1000);
+                    }
+                });
+            }
+        } else {
             this.instruments.set(action, this.buildCurrentInstrument());
             if(type === 'toggleNote') {
                 this.downBinds.set(action, () => this.toggleBeep(action, value));
@@ -50,24 +68,6 @@ class Instrument extends Component {
                 });
             } else {
                 alert('Type \'' + type + '\' is not supported.')
-            }
-        } else if(action === 'MouseMoveY' || action === 'MouseMoveX') {
-            let movementType = 'movementX';
-            if(action === 'MouseMoveY') {
-                movementType = 'movementY'
-            }
-            if(type === 'volume') {
-                this.downBinds.set(action, (event) => {
-                    for(let i of this.instruments.values()) {
-                        i.update_volume(event[movementType] / 1000);
-                    }
-                });
-            } else if(type === 'frequency') {
-                this.downBinds.set(action, (event) => {
-                    for(let i of this.instruments.values()) {
-                        i.update_frequency_bend(-1, 1, event[movementType] / 1000);
-                    }
-                });
             }
         }
     }
