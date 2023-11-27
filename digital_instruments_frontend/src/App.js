@@ -9,6 +9,7 @@ class App extends Component {
 
     return (
       <NextUIProvider>
+        <p className='font-mono text-4xl flex items-center justify-center p-5'>Digital Instruments</p>
         <InstrumentCards name="Instrument Name" description="This is the description"/>
       </NextUIProvider>
     );

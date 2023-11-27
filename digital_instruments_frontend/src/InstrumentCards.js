@@ -55,9 +55,9 @@ class InstrumentCards extends React.Component {
                 </CardFooter>
                 </Card>
             ))}
-            <Card shadow="sm" isPressable onPress={() => this.setState({makerVisibility: 'visible'})}>
+            <Card className="hover:bg-green-300" shadow="sm" isPressable onPress={() => this.setState({makerVisibility: 'visible'})}>
                 <CardBody className="overflow-visible p-0">
-                    <Plus className="flex-1 w-2/3 mx-auto p-4 text-lg bg-white h-full"></Plus>
+                    <Plus className="flex-1 w-2/3 mx-auto p-4 text-lg h-full"></Plus>
                 </CardBody>
             </Card>
             <div className={'fixed top-0 mx-auto inset-x-0 h-full z-10 max-w-5xl ' + this.state.makerVisibility}><InstrumentMaker exitCallback={() => this.setState({makerVisibility: 'invisible'})}></InstrumentMaker></div>
