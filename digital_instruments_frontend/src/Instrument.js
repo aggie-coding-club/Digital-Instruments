@@ -36,6 +36,18 @@ class Instrument extends Component {
                     }
                 });
                 this.upBinds.set(action, () => this.toggleBeep(action, value));
+            } else if(type === 'volume') {
+                this.downBinds.set(action, (event) => {
+                    for(let i of this.instruments.values()) {
+                        i.set_volume(value);
+                    }
+                });
+            } else if(type === 'frequency') {
+                this.downBinds.set(action, (event) => {
+                    for(let i of this.instruments.values()) {
+                        i.set_frequency_bend(value);
+                    }
+                });
             } else {
                 alert('Type \'' + type + '\' is not supported.')
             }
