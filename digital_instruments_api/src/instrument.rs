@@ -21,6 +21,7 @@ pub struct Instrument {
     releasing: Arc<AtomicBool>,
     overtone_relative_amplitudes: Arc<Mutex<Vec<f64>>>,
     stream: Option<Stream>,
+    frequency_bend: Arc<AtomicF64>,
 }
 
 #[wasm_bindgen]
@@ -53,7 +54,12 @@ impl Instrument {
             releasing: Arc::new(AtomicBool::new(false)),
             overtone_relative_amplitudes: Arc::new(Mutex::new(Vec::<f64>::new())),
             stream: None,
+            frequency_bend: Arc::new(0.0.into()),
         }
+    }
+
+    pub fn has_started(&self) -> bool {
+        self.stream.is_some()
     }
 
     pub fn is_releasing(&self) -> bool {
@@ -87,7 +93,7 @@ impl Instrument {
     /// # Arguments
     ///
     /// * `octave` - An optional integer representing the octave to play the note in. Defaults to 4 if not provided.
-    /// * `note` - An optional integer representing the note to play where 0 is A, 1 is A#, and so on. Defaults to 0 if not provided.
+    /// * `note` - An optional integer representing the note to play where 0 is C, 1 is C#, and so on. Defaults to 0 if not provided.
     ///
     /// # Returns
     ///
@@ -95,7 +101,7 @@ impl Instrument {
     pub fn play_octave_note(&mut self, octave: i32, note: i32) {
         self.play_note(
             Some(
-                ((octave - 4) * 12) + note
+                ((octave - 4) * 12) + note - 9
             ));
     }
 
@@ -111,19 +117,23 @@ impl Instrument {
     pub fn play_note_string(&mut self, notestring: String) {
         let octave = notestring.chars().last().unwrap_or('4').to_digit(10).unwrap_or(4) as i32;
         let note = match notestring.chars().nth(0).unwrap_or('A') {
-            'A' => 0,
-            'B' => 2,
-            'C' => 3,
-            'D' => 5,
-            'E' => 7,
-            'F' => 8,
-            'G' => 10,
+            'C' => 0,
+            'D' => 2,
+            'E' => 4,
+            'F' => 5,
+            'G' => 7,
+            'A' => 9,
+            'B' => 11,
             _ => 0,
         };
 
         let modifier = match notestring.chars().nth(1).unwrap_or(' ') {
             '#' => 1,
-            'b' => -1,
+            'b' => match notestring.chars().nth(2).unwrap_or(' ') {
+                'b' => -2,
+                _ => -1,
+            },
+            'x' => 2,
             _ => 0,
         };
 
@@ -134,6 +144,20 @@ impl Instrument {
     pub fn set_overtone_relative_amplitudes(&self, overtone_relative_amplitudes: Vec<f64>) {
         let mut relative_amplitudes = self.overtone_relative_amplitudes.lock().unwrap();
         *relative_amplitudes = overtone_relative_amplitudes;
+    }
+
+    pub fn set_frequency_bend(&self, frequency_bend: f64) {
+        self.frequency_bend.store(frequency_bend, Ordering::Relaxed);
+    }
+
+    pub fn update_frequency_bend(&self, min_bend: f64, max_bend: f64, change: f64) {
+        let mut updated_frequency = self.frequency_bend.load(Ordering::Relaxed) + change;
+        if updated_frequency > max_bend {
+            updated_frequency = max_bend;
+        } else if updated_frequency < min_bend {
+            updated_frequency = min_bend;
+        }
+        self.frequency_bend.store(updated_frequency, Ordering::Relaxed);
     }
 
     pub fn set_volume(&self, volume: f64) {
@@ -175,6 +199,7 @@ impl Instrument {
         let release_seconds = self.release_seconds;
         let mut release_start = 0.0;
         let is_releasing = self.releasing.clone();
+        let frequency_bend = self.frequency_bend.clone();
 
         let mut next_value = move || {
             sample_clock += 1.0 / sample_rate;
@@ -184,6 +209,7 @@ impl Instrument {
             }
 
             let mut amplitude_multiplier = sustain_amplitude;
+            let freq = freq * frequency_bend.load(Ordering::Relaxed) + freq;
 
             if sample_clock < attack_seconds {
                 amplitude_multiplier = attack_amplitude * sample_clock / attack_seconds;
